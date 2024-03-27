@@ -1,6 +1,6 @@
 Description Project
 
-GoPro is a command-line application developed in C++ that processes an image
+ImageProcessor is a command-line application developed in C++ that processes an image
 to find the top N brightest pixels and outputs the result as a JSON file. 
 The design of application is using basic image processing load and JSON output generation using C++,OpenCV, and Google Test for unit testing.
 
@@ -10,21 +10,21 @@ OpenCV (4.x) : Used for image loading
 Google Test : Used for testing
 
 Usage
-To use the GoPro application, the command syntax is as follows:
-GoPro <image_path> <bit_depth> <output_json_path>
+To use the ImageProcessor application, the command syntax is as follows:
+ImageProcessor <image_path> <bit_depth> <output_json_path>
 
 <image_path>: The path to the input image file.
 <bit_depth>: The bit depth of the image (e.g., 8 or 16).
 <output_json_path> : The output path for the result JSON file.
 
 Example:
-./bin/gopro ./tests/new.png 50 out.json
+./bin/ImageProcessor ./tests/new.png 50 out.json
 
 Installation Instructions
 1. Install dependencies
 2. Configure makefile project.
 3. Compile the Project: Use the provided Makefile to compile the project. 
-4. run gopro bin file from ./bin directory.
+4. run ImageProcessor bin file from ./bin directory.
 
 
 1.Install dependencies - guide.
