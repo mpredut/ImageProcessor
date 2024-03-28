@@ -152,8 +152,8 @@ int simulate() {
 
 
     std::vector<std::function<std::vector<PixelCoord>(ImageProcessor<uint16_t>, int)>> processFunctions = {
-        &ImageProcessor<uint16_t>::processImageSet,
-        &ImageProcessor<uint16_t>::processImageHeapBest
+        &ImageProcessor<uint16_t>::processImageParallel,
+        &ImageProcessor<uint16_t>::processImageHeap
         // add here new fc for testing
     };
 

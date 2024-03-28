@@ -271,7 +271,10 @@ void processSubImage(std::vector<PixelCoord>& v, size_t topN, size_t startY, siz
         for (size_t x = 0; x < image.cols(); ++x) {
             if (v.size() < topN) {
                 v.push_back({x, y});
-                std::push_heap(v.begin(), v.end(), comp);
+                if (v.size() == topN) {
+                    std::make_heap(v.begin(), v.end(), comp);
+                }
+                //std::push_heap(v.begin(), v.end(), comp);
             } else {
                 T pixelValue = image.getPixelValue(x, y);
                 T heapMinValue = image.getPixelValue(v.front().x, v.front().y);
@@ -295,11 +298,13 @@ void processSubImage(std::vector<PixelCoord>& v, size_t topN, size_t startY, siz
 std::vector<PixelCoord> processImageParallel(size_t topN) {
 
     size_t numThreads = std::thread::hardware_concurrency();
+    std::cout << "Num threads " << numThreads << std::endl;
 
-    if (topN <= 0) {
-        std::cout << "When topN is 0, no pixels are extracted.\n";
+    if (topN <= 0 || image.size() < 1) {
+        std::cout << "Invalid input: topN is <= 0 or image has no pixels.\n";
         return {};
     }
+    topN = std::min(topN, image.size());
 
     std::vector<std::vector<PixelCoord>> localHeaps(numThreads);
     std::vector<std::thread> threads(numThreads);
