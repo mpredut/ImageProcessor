@@ -68,7 +68,7 @@ public:
 
 
 
-std::vector<PixelCoord> processImageDummy(size_t topN) {
+std::vector<PixelCoord> processImage(size_t topN) {
     std::vector<PixelCoord> v;
     ComparePixelCoord comp(image);
 
@@ -204,7 +204,7 @@ return result;
 }
 
 
-std::vector<PixelCoord> processImage(size_t topN) {
+std::vector<PixelCoord> processImageHeapBest(size_t topN) {
     std::vector<PixelCoord> v;
     ComparePixelCoord comp(image);
 
@@ -262,7 +262,7 @@ Sequential Memory Access: Pixels in images are generally stored in memory sequen
 Accessing them in this order maximizes cache efficiency,
 as adjacent data is often preloaded into the cache by the CPU's prefetching mechanisms */
 
-void processSubImage(std::vector<PixelCoord>& v, size_t topN, int startY, int endY) {
+void processSubImage(std::vector<PixelCoord>& v, size_t topN, size_t startY, size_t endY) {
     ComparePixelCoord comp(image);
 
     
@@ -294,7 +294,7 @@ void processSubImage(std::vector<PixelCoord>& v, size_t topN, int startY, int en
 
 std::vector<PixelCoord> processImageParallel(size_t topN) {
 
-    int numThreads = std::thread::hardware_concurrency();
+    size_t numThreads = std::thread::hardware_concurrency();
 
     if (topN <= 0) {
         std::cout << "When topN is 0, no pixels are extracted.\n";
@@ -306,11 +306,11 @@ std::vector<PixelCoord> processImageParallel(size_t topN) {
     ComparePixelCoord comp(image);
 
     // Calculăm numărul de linii pe care fiecare thread trebuie să le proceseze
-    int rowsPerThread = image.rows() / numThreads;
+    size_t rowsPerThread = image.rows() / numThreads;
 
     for (size_t i = 0; i < numThreads; ++i) {
-        int startY = i * rowsPerThread;
-        int endY = (i + 1) * rowsPerThread;
+        size_t startY = i * rowsPerThread;
+        size_t endY = (i + 1) * rowsPerThread;
         if (i == numThreads - 1) {
             endY = image.rows(); // Asigurăm că ultimul thread preia restul liniilor
         }
@@ -343,6 +343,7 @@ std::vector<PixelCoord> processImageParallel(size_t topN) {
     //std::sort(finalHeap.begin(), finalHeap.end(), comp);
     return finalHeap;
 }
+
 
 std::vector<PixelCoord> processImagePQ( size_t topN) {
     if (topN <= 0 || image.size() < 1) {

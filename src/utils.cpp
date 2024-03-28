@@ -116,6 +116,69 @@ static std::vector<Pixel> convertMatToPixels(const cv::Mat& image) {
  */
 
 
+
+#include <opencv2/opencv.hpp>
+#include <random>
+
+void fillUniform(cv::Mat& region) {
+    cv::randu(region, cv::Scalar(0), cv::Scalar(256)); // Valori uniforme între 0 și 255
+}
+
+void fillGradient(cv::Mat& region) {
+    for (int i = 0; i < region.rows; ++i) {
+        uchar value = static_cast<uchar>((255.0 / region.rows) * i);
+        for (int j = 0; j < region.cols; ++j) {
+            region.at<uchar>(i, j) = value;
+        }
+    }
+}
+
+void fillGaussian(cv::Mat& region) {
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::normal_distribution<> d(128, 30); // Distribuție normală cu media 128 și deviația standard 30
+
+    for (int i = 0; i < region.rows; ++i) {
+        for (int j = 0; j < region.cols; ++j) {
+            uchar value = static_cast<uchar>(std::min(std::max(int(d(gen)), 0), 255));
+            region.at<uchar>(i, j) = value;
+        }
+    }
+}
+
+void fillConstant(cv::Mat& region, uchar value) {
+    region.setTo(cv::Scalar(value));
+}
+
+cv::Mat generateMatrixWithVariableRegions(size_t size, size_t regionsX, size_t regionsY) {
+    cv::Mat image(size, size, CV_8UC1, cv::Scalar(0)); // Imagine în scală de gri inițializată cu 0
+
+    size_t regionWidth = size / regionsX;
+    size_t regionHeight = size / regionsY;
+
+    for (size_t y = 0; y < regionsY; ++y) {
+        for (size_t x = 0; x < regionsX; ++x) {
+            cv::Rect regionRect(x * regionWidth, y * regionHeight, regionWidth, regionHeight);
+            cv::Mat region = image(regionRect);
+
+            // Aplică un tip de umplere bazat pe o schemă sau aleator
+            switch ((x + y) % 4) { // Exemplu de schemă
+                case 0: fillUniform(region); break;
+                case 1: fillGradient(region); break;
+                case 2: fillGaussian(region); break;
+                case 3: fillConstant(region, 128); break; // Valoare constantă
+            }
+        }
+    }
+
+    return image;
+}
+
+
+
+
+
+
 template<typename T>
 std::string toJson(const IImage<T>& image, const std::vector<PixelCoord>& pixels) 
 {

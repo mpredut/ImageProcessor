@@ -21,6 +21,8 @@ template<typename T>
 
 bool compareVectors(const std::vector<PixelCoord>& vec1, const std::vector<PixelCoord>& vec2);
 
+cv::Mat generateMatrixWithVariableRegions(size_t size, size_t regionsX, size_t regionsY);
+
 template<typename T>
 std::string toJson(const IImage<T>& image, const std::vector<PixelCoord>& pixels);
 
