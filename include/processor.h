@@ -313,18 +313,29 @@ std::vector<PixelCoord> processImageParallel(size_t topN) {
         thread.join();
     }
 
+
+  auto start = std::chrono::high_resolution_clock::now();
+
     // Combinăm heap-urile locale într-unul global
     std::vector<PixelCoord> finalHeap;
     for (const auto& heap : localHeaps) {
         for (const auto& coord : heap) {
             finalHeap.push_back(coord);
-            std::push_heap(finalHeap.begin(), finalHeap.end(), comp);
+            if(finalHeap.size() == topN) {
+                std::make_heap(finalHeap.begin(), finalHeap.end(), comp);
+            }
+            //std::push_heap(finalHeap.begin(), finalHeap.end(), comp);
             if (finalHeap.size() > topN) {
                 std::pop_heap(finalHeap.begin(), finalHeap.end(), comp);
                 finalHeap.pop_back();
             }
         }
     }
+
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> execTime = end - start;
+  
+   std::cout << " Intermediar ExecTime: " << execTime.count() << " ms " << std::endl;
 
     //std::sort_heap(finalHeap.begin(), finalHeap.end(),  ComparePixel(image));
     
