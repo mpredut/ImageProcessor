@@ -4,7 +4,7 @@
 #include "image.h"
 
 struct PixelCoord {
-    int x, y;
+    size_t x, y;
     PixelCoord(int xCoord, int yCoord) : x(xCoord), y(yCoord) {}
 };
 
@@ -18,6 +18,8 @@ template<typename T>
             return img.getPixelValue(p1.x, p1.y) > img.getPixelValue(p2.x, p2.y);
         }
     };
+
+bool compareVectors(const std::vector<PixelCoord>& vec1, const std::vector<PixelCoord>& vec2);
 
 template<typename T>
 std::string toJson(const IImage<T>& image, const std::vector<PixelCoord>& pixels);

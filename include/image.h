@@ -18,8 +18,8 @@ template <typename T>
 class IImage {
 public:
     virtual T getPixelValue(int x, int y) const = 0;
-    virtual int rows() const = 0;
-    virtual int cols() const = 0;
+    virtual size_t rows() const = 0;
+    virtual size_t cols() const = 0;
     virtual size_t size() const = 0;
     
     //
@@ -77,10 +77,10 @@ public:
         return 0; //Assume a black background for pixels that are not specified
     }
 
-    int rows() const override {
+    size_t rows() const override {
         return max_y + 1; // max value + 1 give the max rows
     }
-    int cols() const override {
+    size_t cols() const override {
         return max_x + 1; // max value + 1 give the max cols
     }
     size_t size() const override {
@@ -154,8 +154,8 @@ public:
 		}
 	}
 
-    int rows() const override { return image.rows; }
-    int cols() const override { return image.cols; }
+    size_t rows() const override { return image.rows; }
+    size_t cols() const override { return image.cols; }
     size_t size() const override { return (rows() * cols()); }
 };
 

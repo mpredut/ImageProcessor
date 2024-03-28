@@ -34,9 +34,10 @@ $(BIN_DIR)/go: $(OBJS)
 $(OBJ_DIR)/%_test.o: $(TEST_DIR)/%.cpp $(DEPS)
 	$(CXX) $(CXXFLAGS) -I$(GTEST_DIR)/include -c $< -o $@
 
-test: $(TEST_OBJS)
+test: $(TEST_OBJS) obj/utils.o
 	@echo "TEST_OBJS: $(TEST_OBJS)"
 	$(CXX) $(LDFLAGS) $^ -o $(BIN_DIR)/test -I$(GTEST_DIR)/include -L$(GTEST_DIR)/lib $(GTESTFLAGS)
+
 run: test
 	./$(BIN_DIR)/test
 
