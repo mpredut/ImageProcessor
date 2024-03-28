@@ -70,23 +70,7 @@ public:
 
 std::vector<PixelCoord> processImage(size_t topN) {
     std::vector<PixelCoord> v;
-    ComparePixelCoord comp(image);
-
-    v.reserve(topN);
-    
-    for (int y = 0; y < image.rows(); ++y) {
-        for (int x = 0; x < image.cols(); ++x) {
-            if (v.size() < topN) {
-                v.emplace_back(x, y);
-            } else break;
-        }
-    }
-
-    std::sort(v.begin(), v.end(), comp);
-    //std::make_heap(v.begin(), v.end(), comp);//t
-
-
-    //v = processImageSet(topN);
+    v = processImageParallel(topN);
     return v;
 }
 
