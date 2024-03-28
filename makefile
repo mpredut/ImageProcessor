@@ -15,7 +15,6 @@ TEST_DIR := tests
 INCLUDE_DIR := include
 GTEST_DIR := lib/googletest
 
-
 SRCS := $(wildcard $(SRC_DIR)/*.cpp)
 OBJS := $(SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 TEST_SRCS := $(wildcard $(TEST_DIR)/*.cpp)

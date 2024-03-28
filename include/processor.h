@@ -67,10 +67,43 @@ public:
     ImageProcessor(const IImage<T>& img) : image(img) {}
 
 
-std::vector<PixelCoord> processImage(size_t topN) {
+std::vector<PixelCoord> processImage3(size_t topN) {
     std::vector<PixelCoord> v;
+    ComparePixelCoord comp(image);
 
-    v = processImageSet(topN);
+    v.reserve(topN);
+    for (int y = 0; y < image.rows(); ++y) {
+        for (int x = 0; x < image.cols(); ++x) {
+            if (v.size() < topN) {
+                v.emplace_back(x, y);
+                std::push_heap(v.begin(), v.end(), comp);//t
+            } else break;
+        } 
+    }
+
+    //v = processImageSet(topN);
+    return v;
+}
+
+std::vector<PixelCoord> processImage2(size_t topN) {
+    std::vector<PixelCoord> v;
+    ComparePixelCoord comp(image);
+
+    v.reserve(topN);
+    
+    for (int y = 0; y < image.rows(); ++y) {
+        for (int x = 0; x < image.cols(); ++x) {
+            if (v.size() < topN) {
+                v.emplace_back(x, y);
+            } else break;
+        }
+    }
+
+    std::sort(v.begin(), v.end(), comp);
+    //std::make_heap(v.begin(), v.end(), comp);//t
+
+
+    //v = processImageSet(topN);
     return v;
 }
 
@@ -99,10 +132,11 @@ std::vector<PixelCoord> processImageSort( size_t topN) {
 
 
 std::vector<PixelCoord> processImagePQ( size_t topN) {
-    if (topN <= 0) {
-        std::cout << "When topN is 0, no pixels are extracted.\n";
+    if (topN <= 0 || image.size() < 1) {
+        std::cout << "Invalid input: topN is <= 0 or image has no pixels.\n";
         return {};
     }
+    topN = std::min(topN, image.size());
 
 //    std::priority_queue<PixelCoord, std::vector<PixelCoord>, ComparePixelCoord> pq(ComparePixelCoord(image));
     std::priority_queue<PixelCoord, std::vector<PixelCoord>, ComparePixelCoord> pq{ComparePixelCoord(image)};
@@ -137,10 +171,11 @@ std::vector<PixelCoord> processImageHeap(size_t topN) {
     std::vector<PixelCoord> v;
     ComparePixelCoord comp(image);
 
-    if (topN <= 0) {
-            std::cout << "When topN is 0, no pixels are extracted.\n";
-            return {};
+    if (topN <= 0 || image.size() < 1) {
+        std::cout << "Invalid input: topN is <= 0 or image has no pixels.\n";
+        return {};
     }
+    topN = std::min(topN, image.size());
 
     v.reserve(topN);
     for (int y = 0; y < image.rows(); ++y) {
@@ -177,6 +212,111 @@ std::vector<PixelCoord> processImageHeap(size_t topN) {
     return v; 
 }
 
+
+std::vector<PixelCoord> processImage(size_t topN) {
+    std::vector<PixelCoord> v;
+    ComparePixelCoord comp(image);
+
+    if (topN <= 0 || image.size() < 1) {
+        std::cout << "Invalid input: topN is <= 0 or image has no pixels.\n";
+        return {};
+    }
+    topN = std::min(topN, image.size());
+
+    v.reserve(topN);
+
+   
+    //std::make_heap(v.begin(), v.end(), comp);
+
+    std::vector<PixelCoord> vv;
+     for (int y = 0; y < image.rows(); ++y) {
+        for (int x = 0; x < image.cols(); ++x) {
+            if (vv.size() < topN) {
+                vv.push_back({x, y});
+            }
+        }
+     }
+
+
+ // Calculate the number of full pixels to add
+    size_t completeRows = topN / image.cols();
+    size_t remainingPixels = topN % image.cols();
+
+    // Add pixels from complete rows
+    for (size_t y = 0; y < completeRows; ++y) {
+        for (int x = 0; x < image.cols(); ++x) {
+            v.emplace_back(x, y);
+        }
+    }
+
+    // Add the remaining pixels from the next row
+    for (size_t x = 0; x < remainingPixels; ++x) {
+        v.emplace_back(x, completeRows);
+    }
+
+    //compareVectors(v,vv);
+    // Initialize the heap with the added pixels
+    std::make_heap(v.begin(), v.end(), comp);
+
+    // Process the rest of the image, if there is any
+    for (size_t y = completeRows; y < image.rows(); ++y) {
+        size_t startCol = (y == completeRows) ? remainingPixels : 0;
+        for (size_t x = startCol; x < image.cols(); ++x) {
+            T pixelValue = image.getPixelValue(x, y);
+            T heapMinValue = image.getPixelValue(v.front().x, v.front().y);
+            //PixelCoord currentPixel(x, y);
+            // Only if the heap is full, compare and possibly replace the min heap
+            //if (comp(v.front(), currentPixel)) {
+             if (pixelValue > heapMinValue) {
+                std::pop_heap(v.begin(), v.end(), comp);
+                v.pop_back(); 
+                v.emplace_back(x, y);
+                std::push_heap(v.begin(), v.end(), comp);
+            }
+        }
+    }
+
+    // La final, 'v' conține top 'N' pixeli bazat pe criteriul specificat
+    return v;
+    
+
+    size_t row = completeRows;
+    size_t col = remainingPixels;
+
+    //current row and next cols ... image.cols()
+    for (int x = col; x < image.cols(); ++x) {
+        T pixelValue = image.getPixelValue(x, row);
+        T heapMinValue = image.getPixelValue(v.front().x, v.front().y);
+        
+        if (pixelValue > heapMinValue) {
+            std::pop_heap(v.begin(), v.end(), comp);
+            v.pop_back();
+
+            v.emplace_back(x, row);
+            std::push_heap(v.begin(), v.end(), comp);
+        }
+    }
+
+    //next row
+    for (int y = row + 1; y < image.rows(); ++y) {
+        for (int x = 0; x < image.cols(); ++x) {
+            T pixelValue = image.getPixelValue(x, y);
+            T heapMinValue = image.getPixelValue(v.front().x, v.front().y);
+            
+            if (pixelValue > heapMinValue) {
+                std::pop_heap(v.begin(), v.end(), comp);
+                v.pop_back();
+
+                v.emplace_back(x, y);
+                std::push_heap(v.begin(), v.end(), comp);
+            }
+        }
+    }
+
+    return v; 
+}
+
+
 /* 
 Sequential Memory Access: Pixels in images are generally stored in memory sequentially, line by line.
 Accessing them in this order maximizes cache efficiency,
@@ -185,6 +325,8 @@ as adjacent data is often preloaded into the cache by the CPU's prefetching mech
 void processSubImage(std::vector<PixelCoord>& v, size_t topN, int startY, int endY) {
     ComparePixelCoord comp(image);
 
+    
+    //2*topn  + (n - topn) * (2 * log (topn)) 
     for (int y = startY; y < endY; ++y) {
         for (int x = 0; x < image.cols(); ++x) {
             if (v.size() < topN) {
@@ -208,56 +350,6 @@ void processSubImage(std::vector<PixelCoord>& v, size_t topN, int startY, int en
     //std::sort_heap(v.begin(), v.end(), ComparePixel());
 }
 
-std::priority_queue<PixelCoord, std::vector<PixelCoord>, std::greater<PixelCoord>>
-	mergeTopPixelQueues(const std::vector<std::priority_queue<PixelCoord, std::vector<PixelCoord>, 
-                        std::greater<PixelCoord>>>& pixelQueues, int topN) {
-        std::priority_queue<PixelCoord, std::vector<PixelCoord>, std::greater<PixelCoord>> finalQueue;
-
-        for (const auto& queue : pixelQueues) {
-            std::priority_queue<PixelCoord, std::vector<PixelCoord>, std::greater<PixelCoord>> tempQueue = queue;
-            while (!tempQueue.empty()) {
-                finalQueue.push(tempQueue.top());
-                tempQueue.pop();
-
-                if (finalQueue.size() > topN) {
-                    finalQueue.pop();
-                }
-            }
-        }
-
-        return finalQueue;
-}
-
-
-std::vector<PixelCoord> mergeLocalHeapsUsingPriorityQueue(
-        const std::vector<std::vector<PixelCoord>>& localHeaps, size_t topN) {
-    ComparePixelCoord comp(image);
-    // Folosim un min-heap pentru că vrem să păstrăm cele mai mari valori (deci comparăm invers)
-    auto compPriorityQueue = [&comp](const PixelCoord& a, const PixelCoord& b) { return comp(b, a); };
-    std::priority_queue<PixelCoord, std::vector<PixelCoord>, decltype(compPriorityQueue)> pq(compPriorityQueue);
-
-    // Încărcăm toate elementele în priority_queue
-    for (const auto& heap : localHeaps) {
-        for (const auto& item : heap) {
-            pq.push(item);
-            // Dacă depășim dimensiunea dorită, eliminăm elementul cu prioritatea cea mai mică
-            if (pq.size() > topN) {
-                pq.pop();
-            }
-        }
-    }
-
-    // Extragem elementele din priority_queue într-un vector, inversând ordinea
-    // pentru că vrem ca elementul cu cea mai mare prioritate să fie la sfârșit
-    std::vector<PixelCoord> result;
-    while (!pq.empty()) {
-        result.push_back(pq.top());
-        pq.pop();
-    }
-    std::reverse(result.begin(), result.end());
-
-    return result;
-}
 
 
 std::vector<PixelCoord> processImageParallel(size_t topN) {
@@ -313,10 +405,11 @@ std::vector<PixelCoord> processImageParallel(size_t topN) {
 }
 
 std::vector<PixelCoord> processImageCS(size_t topN) {
-    if (topN <= 0) {
-        std::cout << "When topN is 0, no pixels are extracted.\n";
+    if (topN <= 0 || image.size() < 1) {
+        std::cout << "Invalid input: topN is <= 0 or image has no pixels.\n";
         return {};
     }
+    topN = std::min(topN, image.size());
 
      // Determină valoarea maximă a pixelilor
     //decltype(image.getPixelValue(0, 0))  maxPixelValue = 0; //the sise of that depend on Image
@@ -360,10 +453,11 @@ std::vector<PixelCoord> processImageCS(size_t topN) {
 
 
 std::vector<PixelCoord> processImageCS_MAP( size_t topN) {
-    if (topN <= 0) {
-        std::cout << "When topN is 0, no pixels are extracted.\n";
+    if (topN <= 0 || image.size() < 1) {
+        std::cout << "Invalid input: topN is <= 0 or image has no pixels.\n";
         return {};
     }
+    topN = std::min(topN, image.size());
 
     std::unordered_map<unsigned short, std::vector<PixelCoord>> buckets;
 
@@ -379,7 +473,6 @@ std::vector<PixelCoord> processImageCS_MAP( size_t topN) {
     topPixels.reserve(topN);
 
     // Parcurgem buckets în ordinea descrescătoare a cheilor pentru a selecta top N pixeli cu cele mai mari valori
-    // Notă: Nu putem parcurge direct un unordered_map în ordine descrescătoare a cheilor, așa că vom colecta cheile separat și le vom sorta.
     std::vector<unsigned short> sortedKeys;
     for (const auto& pair : buckets) {
         sortedKeys.push_back(pair.first);
@@ -434,12 +527,15 @@ std::vector<PixelCoord> convertSetToVector(const std::set<AltComp, AltCompCompar
 }
 
 std::vector<PixelCoord> processImageSet(size_t topN) {
-    if (topN <= 0) {
-        std::cout << "When topN is 0, no pixels are extracted.\n";
+    if (topN <= 0 || image.size() < 1) {
+        std::cout << "Invalid input: topN is <= 0 or image has no pixels.\n";
         return {};
     }
+    topN = std::min(topN, image.size());
 
     std::set<AltComp, AltCompCompare> topPixels;
+
+    //topPixels.reserve(topN);
 
     for (int y = 0; y < image.rows(); ++y) {
         for (int x = 0; x < image.cols(); ++x) {
@@ -471,11 +567,11 @@ std::vector<PixelCoord> processImageSet(size_t topN) {
 std::vector<PixelCoord> processImageHeapNice(size_t topN) {
     std::vector<AltComp> v;
     //ComparePixelCoord comp(image);
-
-    if (topN <= 0) {
-            std::cout << "When topN is 0, no pixels are extracted.\n";
-            return {};
+    if (topN <= 0 || image.size() < 1) {
+        std::cout << "Invalid input: topN is <= 0 or image has no pixels.\n";
+        return {};
     }
+    topN = std::min(topN, image.size());
 
     v.reserve(topN);
     for (int y = 0; y < image.rows(); ++y) {

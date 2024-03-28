@@ -11,7 +11,7 @@
 #include "image.h"
 #include "processor.h"
 
-int topN = 1;
+size_t topN = 100000;
 
 //
 // HELPERS FOR UNIT TESTS
@@ -118,14 +118,14 @@ bool comparePixelCoord(std::vector<PixelCoord> &v1, std::vector<PixelCoord> &v2)
 //
 
 // Test for basic functionality verification 
-TEST(GoProTest, TestFunctionality1) {
+TEST(Test, TestFunctionality1) {
     unsigned int topN = 1;
     VectorImage<uint16_t> img({{255, 1, 1}, {777, 5, 6}, {150, 3, 3}});
     img.printImage();
     //auto sortedPixels = img.getPixelsSortedByValue();
 
-    GoProImageProcessor<uint16_t> gopro(img);
-    std::vector<PixelCoord> topNpix = gopro.processImage(topN);
+    ImageProcessor<uint16_t> ip(img);
+    std::vector<PixelCoord> topNpix = ip.processImage(topN);
     ASSERT_LE(topNpix.size() , topN);
     ASSERT_GT(topNpix.size() , 0);
     ASSERT_EQ(topNpix[0].x , 5);
@@ -138,13 +138,13 @@ TEST(GoProTest, TestFunctionality1) {
 }
 
 // Test for basic functionality verification 
-TEST(GoProTest, TestFunctionality2) {
+TEST(Test, TestFunctionality2) {
     VectorImage<uint16_t> img({{255, 1, 1}, {100, 2, 2}, {150, 3, 3}});
-    GoProImageProcessor<uint16_t> gopro(img);
+    ImageProcessor<uint16_t> ip(img);
 
     for(size_t topN = 1; topN < 100; ++topN) {
         std::cout <<"topN " << topN << std::endl;
-        std::vector<PixelCoord> topNpix = gopro.processImage(topN);
+        std::vector<PixelCoord> topNpix = ip.processImage(topN);
         ASSERT_LE(topNpix.size() , topN);
         if(topNpix.size() < topN) {
             ASSERT_EQ(img.size(), topNpix.size()) ;
@@ -167,12 +167,12 @@ TEST(ImageProcessing, EdgeCases1) {
     emptyImg.printImage();
     auto sortedPixels = emptyImg.getPixelsSortedByValue();
 
-    GoProImageProcessor<uint16_t> gopro(emptyImg);
-    std::vector<PixelCoord> topNpix = gopro.processImage(topN);
+    ImageProcessor<uint16_t> ip(emptyImg);
+    std::vector<PixelCoord> topNpix = ip.processImage(topN);
     ASSERT_EQ(topNpix.size() , 0);
     
     topN = 1;
-    topNpix = gopro.processImage(topN);
+    topNpix = ip.processImage(topN);
     ASSERT_EQ(topNpix.size() , 0);
 }
 
@@ -180,11 +180,11 @@ TEST(ImageProcessing, EdgeCases1) {
 TEST(ImageProcessing, EdgeCases2) {
    
     VectorImage<uint16_t> img({{0, 1, 1}, {0, 0, 0}, {0, 2, 2}});
-    GoProImageProcessor<uint16_t> gopro(img);
+    ImageProcessor<uint16_t> ip(img);
 
     for(size_t topN = 0; topN < 5; ++topN) {
         std::cout <<"topN " << topN << std::endl;
-        std::vector<PixelCoord> topNpix = gopro.processImage(topN);
+        std::vector<PixelCoord> topNpix = ip.processImage(topN);
         ASSERT_LE(topNpix.size() , topN);
         if(topNpix.size() < topN) {
             ASSERT_EQ(img.size(), topNpix.size()) ;
@@ -200,7 +200,7 @@ TEST(ImageProcessing, EdgeCases2) {
 
 
 // Test for checking random functionality
-TEST(GoProTest, RandomImageGeneration) {
+TEST(Test, RandomImageGeneration) {
   
     VectorImage<uint16_t> img({{255, 1, 1}, {100, 2, 2}, {150, 3, 3}});
     //img.printImage();
@@ -214,11 +214,11 @@ TEST(GoProTest, RandomImageGeneration) {
         std::cout << "Image generated with " << numPixels << " pixels" << std::endl;
         VectorImage<uint16_t> img(generatePixels<uint16_t>(
             numPixels, minX, maxX, minY, maxY, minColor, maxColor));
-        GoProImageProcessor<uint16_t> gopro(img);
+        ImageProcessor<uint16_t> ip(img);
 
         for(unsigned int topN = 0; topN < maxTopN; ++topN ) {
             std::cout << topN << " Pixels with the highest pixel values." << std::endl;
-            std::vector<PixelCoord> topNpix = gopro.processImage(topN);
+            std::vector<PixelCoord> topNpix = ip.processImage(topN);
             //printTopN(img, topNpix);
             ASSERT_LE(topNpix.size() , topN);
             if(topNpix.size() < topN) {
@@ -245,7 +245,7 @@ TEST(ImageProcessingPerformance, processImageHeap) {
 
     VectorImage img(pixels);
 
-    GoProImageProcessor<uint16_t> processor(img);
+    ImageProcessor<uint16_t> processor(img);
 
     auto start = std::chrono::high_resolution_clock::now();
     auto topNpix = processor.processImageHeap(topN);
@@ -270,7 +270,7 @@ TEST(ImageProcessingPerformance, processImageHeapNice) {
 
     VectorImage img(pixels);
 
-    GoProImageProcessor<uint16_t> processor(img);
+    ImageProcessor<uint16_t> processor(img);
 
     auto start = std::chrono::high_resolution_clock::now();
     auto topNpix = processor.processImageHeapNice(topN);
@@ -295,7 +295,7 @@ TEST(ImageProcessingPerformance, processImageParallel) {
 
     VectorImage img(pixels);
 
-    GoProImageProcessor<uint16_t> processor(img);
+    ImageProcessor<uint16_t> processor(img);
 
     auto start = std::chrono::high_resolution_clock::now();
     auto topNpix = processor.processImageParallel(topN);
@@ -321,7 +321,7 @@ TEST(ImageProcessingPerformance, processImageCS) {
 
     VectorImage img(pixels);
 
-    GoProImageProcessor<uint16_t> processor(img);
+    ImageProcessor<uint16_t> processor(img);
 
     auto start = std::chrono::high_resolution_clock::now();
     auto topNpix = processor.processImageCS(topN);//processImageCS_MAP
@@ -346,7 +346,7 @@ TEST(ImageProcessingPerformance, processImageCS_MAP) {
 
     VectorImage img(pixels);
 
-    GoProImageProcessor<uint16_t> processor(img);
+    ImageProcessor<uint16_t> processor(img);
 
     auto start = std::chrono::high_resolution_clock::now();
     auto topNpix = processor.processImageCS_MAP(topN);//processImageCS_MAP
@@ -371,7 +371,7 @@ TEST(ImageProcessingPerformance, processImageSet) {
 
     VectorImage img(pixels);
 
-    GoProImageProcessor<uint16_t> processor(img);
+    ImageProcessor<uint16_t> processor(img);
 
     auto start = std::chrono::high_resolution_clock::now();
     auto topNpix = processor.processImageSet(topN);
@@ -396,7 +396,7 @@ TEST(ImageProcessingPerformance, processImageSort) {
 
     VectorImage img(pixels);
 
-    GoProImageProcessor<uint16_t> processor(img);
+    ImageProcessor<uint16_t> processor(img);
 
     auto start = std::chrono::high_resolution_clock::now();
     auto topNpix = processor.processImageSort(topN);
