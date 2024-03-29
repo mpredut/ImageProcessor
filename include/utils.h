@@ -5,7 +5,7 @@
 
 struct PixelCoord {
     size_t x, y;
-    PixelCoord(int xCoord, int yCoord) : x(xCoord), y(yCoord) {}
+    PixelCoord(size_t xCoord, size_t yCoord) : x(xCoord), y(yCoord) {}
 };
 
 

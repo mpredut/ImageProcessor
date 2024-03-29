@@ -16,16 +16,38 @@
 //Interface
 template <typename T>
 class IImage {
+protected:
+    const T* imgStartPtr;   // Pointer to beggining of image data.
+    mutable T* imgPtr;      // Pointer to image data.
+
+private:
+    IImage() = delete;  
+    //IImage() : imgStartPtr(nullptr), imgPtr(nullptr) {}
+
 public:
+    explicit IImage(T* ptr) : imgStartPtr(ptr), imgPtr(ptr) {}
+
     virtual T getPixelValue(int x, int y) const = 0;
     virtual T rows() const = 0;
     virtual T cols() const = 0;
     virtual size_t size() const = 0;
-    
+
+    virtual T getNextPixelValue() {
+        //if (imgPtr != nullptr) {
+            return *(imgPtr++);
+        //}
+        return T();
+    }
+
+    // reset imgPtr 
+    void moveToStart() const {
+        imgPtr = const_cast<T*>(imgStartPtr);
+    }
+
     //
     // debug only interfaces
     //
-     int printImage() const {
+    int printImage() const {
         for (int y = 0; y < this->rows(); ++y) {
             for (int x = 0; x < this->cols(); ++x) {
                 std::cout << this->getPixelValue(x, y) << " ";
@@ -33,9 +55,58 @@ public:
             std::cout << "\n";
         }
         return 0;
-    };
+    }
 
     virtual ~IImage() = default;
+};
+
+
+
+/*
+ * The ImageWrapper class Instance implementation for IImage.
+ * It is designed to facilitate real image manipulation
+ * in real-life scenarios. 
+ * Utilizes the OpenCV cv::Mat class to handle image data, offering
+ * comprehensive support for a wide range of image formats and operations.
+ * This integration supporting various image depths including
+ *  8-bit, 16-bit, and floating-point representations.
+ */
+template<typename T>
+class ImageWrapper : public IImage<T> {
+private:
+    cv::Mat image;
+
+public:
+    ImageWrapper(const cv::Mat& img) 
+        : IImage<T>(reinterpret_cast<T*>(img.data)), 
+          image(img.isContinuous() ? img : img.clone()) {
+        if (!image.isContinuous()) {
+            throw std::runtime_error("Image data must be continuous and of type ...");
+            //|| image.type() != CV_16U
+        }
+    }//IImage<uint16_t>(img.isContinuous() ? reinterpret_cast<uint16_t*>(img.data) : nullptr), image(img.isContinuous() ? img : img.clone()) {
+
+    
+    T getPixelValue(int x, int y) const {
+        if (x < 0 || x >= image.cols || y < 0 || y >= image.rows) {
+            throw std::out_of_range("Pixel coordinates out of range");
+        }
+		switch (image.depth()) {
+			case CV_8U:
+				return image.at<uchar>(y, x);
+			case CV_16U:
+				return image.at<uint16_t>(y, x);
+			case CV_32F:
+				return static_cast<int>(image.at<float>(y, x));
+			default:
+				throw std::runtime_error("Unsupported image depth.");
+		}
+        return image.ptr<uint16_t>(y)[x];
+	}
+
+    T rows() const override { return image.rows; }
+    T cols() const override { return image.cols; }
+    size_t size() const override { return static_cast<size_t>(image.total()); }
 };
 
 
@@ -54,12 +125,15 @@ public:
 template <typename T>
 class VectorImage : public IImage<T> {
 private:
-    std::vector<std::tuple<T, int, int>> data;
+    std::vector<std::tuple<T, int, int>> data; //toto: make reference
     int max_x = -1;
     int max_y = -1;
 
+    int xstart = 0;
+    int ystart = 0;
+
 public:
-    VectorImage(const std::vector<std::tuple<T, int, int>>& vec) : data(vec) {
+    VectorImage(const std::vector<std::tuple<T, int, int>>& vec) : IImage<T>(nullptr), data(vec) {
         for (const auto& [color, x, y] : vec) {
             max_x = std::max(max_x, (int)x);
             max_y = std::max(max_y, (int)y);
@@ -86,6 +160,30 @@ public:
     size_t size() const override {
         return (rows() * cols());
     };
+
+    // reset imgPtr 
+    void moveToStart() {
+        xstart = 0; ystart = 0; 
+    }
+
+
+    T getNextPixelValue() {
+        if (xstart >= rows() || ystart >= cols()) {
+            return T(); 
+            throw std::runtime_error("Unsupported pixel value.");
+        }
+        T value = getPixelValue(ystart, xstart);
+
+        ++ystart;
+
+        if (ystart >= cols()) {
+            ystart = 0;
+            ++xstart; 
+        }
+
+        return value;
+    }
+
 
     //
     //debug only call
@@ -118,47 +216,20 @@ public:
     };
 };
 
-
-
-/*
- * The ImageWrapper class Instance implementation for IImage.
- * It is designed to facilitate real image manipulation
- * in real-life scenarios. 
- * Utilizes the OpenCV cv::Mat class to handle image data, offering
- * comprehensive support for a wide range of image formats and operations.
- * This integration supporting various image depths including
- *  8-bit, 16-bit, and floating-point representations.
- */
-
-
-class ImageWrapper : public IImage<uint16_t> {
-private:
-    cv::Mat image;
-
-public:
-    ImageWrapper(const cv::Mat& img) : image(img) {};
-
-	uint16_t getPixelValue(int x, int y) const {
-        if (x < 0 || x >= image.cols || y < 0 || y >= image.rows) {
-            throw std::out_of_range("Pixel coordinates out of range");
-        }
-		switch (image.depth()) {
-			case CV_8U:
-				return image.at<uchar>(y, x);
-			case CV_16U:
-				return image.at<uint16_t>(y, x);
-			case CV_32F:
-				return static_cast<int>(image.at<float>(y, x));
-			default:
-				throw std::runtime_error("Unsupported image depth.");
-		}
-	}
-
-    uint16_t rows() const override { return image.rows; }
-    uint16_t cols() const override { return image.cols; }
-    size_t size() const override { return (rows() * cols()); }
-};
-
+/* 
+std::unique_ptr<IImage> createImageWrapper(const cv::Mat& img) {
+    switch (img.depth()) {
+        case CV_8U:
+            return std::make_unique<ImageWrapper<uint8_t>>(img);
+        case CV_16U:
+            return std::make_unique<ImageWrapper<uint16_t>>(img);
+        case CV_32F:
+            return std::make_unique<ImageWrapper<float>>(img);
+        // Add other cases as necessary
+        default:
+            throw std::runtime_error("Unsupported image type.");
+    }
+} */
 
 
 /*
@@ -189,7 +260,7 @@ public:
         if (image.empty()) {
             throw std::runtime_error("Error loading the image.");
         }
-        return std::make_unique<ImageWrapper>(image);
+        return std::make_unique<ImageWrapper<uint16_t>>(image);
     }
 };
 

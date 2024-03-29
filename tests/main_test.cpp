@@ -65,8 +65,8 @@ template<typename T>
 std::vector<PixelCoord> sortImageAndGetTopN(const IImage<T>& image, size_t topN) {
     std::vector<std::pair<PixelCoord, T>> pixels;
 
-    for (int y = 0; y < image.rows(); ++y) {
-        for (int x = 0; x < image.cols(); ++x) {
+    for (size_t y = 0; y < image.rows(); ++y) {
+        for (size_t x = 0; x < image.cols(); ++x) {
             T value = image.getPixelValue(x, y);
             pixels.emplace_back(PixelCoord{x, y}, value);
         }
@@ -137,13 +137,33 @@ TEST(Test, TestFunctionality1) {
     }
 }
 
-// Test for basic functionality verification 
 TEST(Test, TestFunctionality2) {
+    unsigned int topN = 2;
+    VectorImage<uint16_t> img({{255, 1, 1}, {777, 5, 6}, {150, 3, 3}, {777, 4, 6}});
+    img.printImage();
+    //auto sortedPixels = img.getPixelsSortedByValue();
+
+    ImageProcessor<uint16_t> ip(img);
+    std::vector<PixelCoord> topNpix = ip.processImage(topN);
+    ASSERT_EQ(topNpix.size() , topN);
+    ASSERT_EQ(topNpix[0].x , 5);
+    ASSERT_EQ(topNpix[0].y , 6);
+    ASSERT_EQ(topNpix[1].x , 4);
+    ASSERT_EQ(topNpix[1].y , 6);
+     
+    for (const auto& pixelCoord : topNpix) {
+        std::cout << 
+        "PixelCoord x: " << pixelCoord.x << ", y: " << pixelCoord.y << "\n";
+    }
+}
+
+// Test for basic functionality verification 
+TEST(Test, TestFunctionality3) {
     VectorImage<uint16_t> img({{255, 1, 1}, {100, 2, 2}, {150, 3, 3}});
     ImageProcessor<uint16_t> ip(img);
 
     for(size_t topN = 1; topN < 100; ++topN) {
-        std::cout <<"topN " << topN << std::endl;
+        //std::cout <<"topN " << topN << std::endl;
         std::vector<PixelCoord> topNpix = ip.processImage(topN);
         ASSERT_LE(topNpix.size() , topN);
         if(topNpix.size() < topN) {

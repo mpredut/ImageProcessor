@@ -18,7 +18,7 @@
 template<typename T>
 class ImageProcessor {
 private:
-    const IImage<T>& image; 
+    IImage<T>& image; //make const
 
 
     // Comparator for the heap, used to maintain pixels with the highest values.
@@ -64,7 +64,7 @@ private:
 
 
 public:
-    ImageProcessor(const IImage<T>& img) : image(img) {}
+    ImageProcessor(IImage<T>& img) : image(img) {}//toto make const
 
 
 
@@ -73,6 +73,49 @@ std::vector<PixelCoord> processImage(size_t topN) {
     v = processImageParallel(topN);
     return v;
 }
+
+
+std::vector<PixelCoord> processImageHeapNextPixel(size_t topN) {
+    std::vector<AltComp> v;
+    if (topN <= 0 || image.size() < 1) {
+        std::cout << "Invalid input: topN is <= 0 or image has no pixels.\n";
+        return {};
+    }
+    topN = std::min(topN, image.size());
+
+    v.reserve(topN);
+    image.moveToStart();
+
+    for (size_t y = 0; y < image.rows(); ++y) {
+        for (size_t x = 0; x < image.cols(); ++x) {
+            T pixelValue = image.getNextPixelValue(); 
+
+            if (v.size() < topN) {
+                AltComp currentPixel(x, y, pixelValue);
+                v.emplace_back(currentPixel);
+                std::push_heap(v.begin(), v.end(), AltCompCompare());
+            } else {
+                T heapMinValue = v.front().value;
+                if (pixelValue > heapMinValue) {
+                    std::pop_heap(v.begin(), v.end(), AltCompCompare());
+                    v.pop_back();
+
+                    v.emplace_back(AltComp{x, y, pixelValue});
+                    std::push_heap(v.begin(), v.end(), AltCompCompare());
+                }
+            }
+        }
+    }
+
+
+    std::vector<PixelCoord> result;
+    std::transform(v.begin(), v.end(), std::back_inserter(result), [](const AltComp& ac) {
+        return PixelCoord(ac.x, ac.y); 
+    });
+
+    return result; 
+}
+
 
 std::vector<PixelCoord> processImageSort( size_t topN) {
     if (topN <= 0) {
@@ -178,14 +221,15 @@ std::vector<PixelCoord> processImageHeapNice(size_t topN) {
         }
     }
 
-
-std::vector<PixelCoord> result;
-std::transform(v.begin(), v.end(), std::back_inserter(result), [](const AltComp& ac) {
-    return PixelCoord(ac.x, ac.y); // Sau orice logică de conversie necesară
-});
+    // Overhead added here 
+    std::vector<PixelCoord> result;
+    std::transform(v.begin(), v.end(), std::back_inserter(result), [](const AltComp& ac) {
+        return PixelCoord(ac.x, ac.y); // Sau orice logică de conversie necesară
+    });
 
 return result;
 }
+
 
 
 std::vector<PixelCoord> processImageHeapBest(size_t topN) {
@@ -473,10 +517,10 @@ std::vector<PixelCoord> processImageCS_MAP( size_t topN) {
 }
 
 struct AltComp {
-    int x, y;
+    size_t x, y;
     unsigned short value;
 
-    AltComp(int x, int y, unsigned short value) : x(x), y(y), value(value) {}
+    AltComp(size_t x, size_t y, unsigned short value) : x(x), y(y), value(value) {}
 
 // Comparator pentru a menține elementele în ordine descrescătoare
 bool operator<( const AltComp& rhs) const {
@@ -541,5 +585,19 @@ std::vector<PixelCoord> processImageSet(size_t topN) {
 
 
 
+/* 
+//
+std::shared_ptr<IImageProcessor> createImageProcessor(std::shared_ptr<IImageWrapper> wrapper) {
+    cv::Mat img = wrapper->getImage();
+    
+    switch(img.depth()) {
+        case CV_8U:
+            return std::make_shared<ImageProcessor<uint8_t>>(wrapper);
+        case CV_16U:
+            return std::make_shared<ImageProcessor<uint16_t>>(wrapper);
+        default:
+            throw std::runtime_error("Unsupported image type.");
+    }
+}*/
 
-};//end
+};//end */

@@ -14,6 +14,8 @@
 
 // GenerateMatrix.cpp
 #include <opencv2/opencv.hpp>
+#include <opencv2/highgui/highgui.hpp>
+
 #include <cstdlib> // Pentru rand()
 
 
@@ -35,7 +37,6 @@ cv::Mat generateMatrixUniform(size_t size) {
 
     for (size_t i = 0; i < size; ++i) {
         for (size_t j = 0; j < size; ++j) {
-            uchar value = static_cast<uchar>(rand() % 256);
             image.at<uchar>(i, j) = 17;
         }
     }
@@ -44,14 +45,12 @@ cv::Mat generateMatrixUniform(size_t size) {
 }
 
 cv::Mat generateMatrix(size_t size) {
-    cv::Mat image(size, size, CV_8UC3);
+    cv::Mat image(size, size, CV_16U);
 
     for (size_t i = 0; i < size; ++i) {
         for (size_t j = 0; j < size; ++j) {
-            uchar blue = static_cast<uchar>(rand() % 256);
-            uchar green = static_cast<uchar>(rand() % 256);
-            uchar red = static_cast<uchar>(rand() % 256);
-            image.at<cv::Vec3b>(i, j) = cv::Vec3b(blue, green, red);
+            uint16_t value = static_cast<uint16_t>(rand() % 65536); // 2^16 = 65536
+            image.at<uint16_t>(i, j) = value;
         }
     }
 
@@ -60,12 +59,12 @@ cv::Mat generateMatrix(size_t size) {
 
 cv::Mat generateMatrixSort(size_t size, int increment) {
     int start = 0;
-    cv::Mat image(size, size, CV_8UC3);
+    cv::Mat image(size, size, CV_16U);
 
     if(increment < 0) start = size * size - 1;
     for (size_t i = 0; i < size; ++i) {
         for (size_t j = 0; j < size; ++j) {
-            image.at<cv::Vec3b>(i, j) = start;
+            image.at<uint16_t>(i, j) = start;
             start =+ increment;
         }
     }
@@ -87,8 +86,9 @@ cv::Mat generateMatrixWithDistribution(size_t size) {
 
     cv::Mat image = generateMatrixWithVariableRegions(size, regionsX, regionsY);
 
-    //cv::imshow("Generated Image", image);
-    //cv::waitKey(0);
+    // cv::namedWindow("Exemplu", cv::WINDOW_AUTOSIZE);
+    cv::imshow("Generated Image", image);
+    cv::waitKey(0);
 
     return image;
 }
@@ -96,8 +96,8 @@ cv::Mat generateMatrixWithDistribution(size_t size) {
 std::vector<size_t> generateTopNValues(size_t size, size_t steps) {
     size_t totalPixels = size * size;
     std::vector<size_t> topNValues;
-    double startPercentage = 0.01; // Start cu 1%
-    double endPercentage = 0.99;   // End cu 99%
+    double startPercentage = 0.001; // Start cu 0.1%
+    double endPercentage = 0.999;   // End cu 99.9%
     double step = (endPercentage - startPercentage) / (steps - 1);
 
     for (size_t i = 0; i < steps; ++i) {
@@ -129,7 +129,7 @@ void processAndMeasure(size_t dimm, size_t topN, size_t processImageId,
     getrusage(RUSAGE_SELF, &usageEnd);
     
     long memoryUsed = usageEnd.ru_maxrss - usageStart.ru_maxrss;
-    long cost = execTime.count() * 0.7 + memoryUsed * 0.3;
+    long cost = execTime.count() * 0.8 + memoryUsed * 0.2;
 
     std::ofstream file(outputFile, std::ios_base::app);
     file << dimm << "," << topN << "," << processImageId << 
@@ -142,7 +142,7 @@ void processAndMeasure(size_t dimm, size_t topN, size_t processImageId,
 
 #define GENERATE_FUNC_PAIR(func) {func, #func}
 
-int simulate() {
+int simulate(size_t maxImgColAndRowSize, size_t topNgranularity) {
 
   //init CSV with head
     std::string outputFile = "matrix_data.csv";
@@ -152,8 +152,8 @@ int simulate() {
 
 
     std::vector<std::function<std::vector<PixelCoord>(ImageProcessor<uint16_t>, int)>> processFunctions = {
-        &ImageProcessor<uint16_t>::processImageParallel,
-        &ImageProcessor<uint16_t>::processImageHeap
+        &ImageProcessor<uint16_t>::processImageHeapNextPixel,
+        &ImageProcessor<uint16_t>::processImageHeapNice
         // add here new fc for testing
     };
 
@@ -168,24 +168,24 @@ int simulate() {
         {generateMatrixUniform, "Uniform Distribution"}
         // add here static fc for generate matrix with description
     };
-    
-    size_t presetMaxSize = 10000; // Max image row and col size
 
     for (auto& generatorWithDesc : matrixGenerators) {
-        auto generateMatrix = generatorWithDesc.first; // Funcția generator
+        auto generateMatrix = generatorWithDesc.first; // fc generator
         const auto& description = generatorWithDesc.second; // Descrierea
 
         std::cout << std::endl;
         std::cout << description << std::endl ;
     
-        for (size_t size = 500; size <= presetMaxSize; size *= 2) {
+        for (size_t size = 100; size <= maxImgColAndRowSize; size *= 2) {
             cv::Mat image = generateMatrix(size);
-            ImageWrapper wrapper(image);
+            ImageWrapper<uint16_t> wrapper(image);
             ImageProcessor<uint16_t> ip(wrapper);
+            //auto wrapper = createImageWrapper(image);
+            //auto ip = createImageProcessor(std::move(wrapper));
             
              std::cout << "size " << size << std::endl ;
             //get relevant topN values
-            std::vector<size_t> topNValues = generateTopNValues(size, 5); // Generate 5 values
+            std::vector<size_t> topNValues = generateTopNValues(size, topNgranularity); // Generate 5 values
             for (auto topN : topNValues) {
                 //std::cout << "Img row: " << image.rows << " img col: " <<  image.cols << std::endl;    
                 std::cout << "Running: " << description << " | Img row: " << image.rows << " img col: " << image.cols << std::endl;      
@@ -210,14 +210,18 @@ int main(int argc, char** argv) {
         std::cerr << "Usage: " << argv[0] << " <image_path> <top_n> <output_json_path>\n";
         return 1;
     }
+    std::string imagePath = argv[1];
+    size_t topN = std::stoi(argv[2]);
+    std::string outputJsonPath = argv[3];
+    std::string outputJsonPathParallel = std::string("Parallel_") + argv[3];
 
-    simulate();
+    size_t topNgranularity = 20;
+    size_t maxImgColAndRowSize = 10000; // Max image row and col size
+
+    simulate(maxImgColAndRowSize, topNgranularity);
 
     try {
-        std::string imagePath = argv[1];
-        size_t topN = std::stoi(argv[2]);
-        std::string outputJsonPath = argv[3];
-        std::string outputJsonPathParallel = std::string("Parallel_") + argv[3];
+       
 
         auto imageReader = ImageReaderFactory::createImageReader();
         auto image = imageReader->readImage(imagePath);

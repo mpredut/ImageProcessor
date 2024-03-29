@@ -150,7 +150,8 @@ void fillConstant(cv::Mat& region, uchar value) {
     region.setTo(cv::Scalar(value));
 }
 
-cv::Mat generateMatrixWithVariableRegions(size_t size, size_t regionsX, size_t regionsY) {
+cv::Mat generateMatrixWithVariableRegions(size_t size, size_t regionsX, size_t regionsY) 
+{
     cv::Mat image(size, size, CV_8UC1, cv::Scalar(0)); // Imagine în scală de gri inițializată cu 0
 
     size_t regionWidth = size / regionsX;
@@ -174,7 +175,21 @@ cv::Mat generateMatrixWithVariableRegions(size_t size, size_t regionsX, size_t r
     return image;
 }
 
+cv::Mat generateMatrix3C(size_t size) 
+{
+    cv::Mat image(size, size, CV_8UC3);    
 
+    for (size_t i = 0; i < size; ++i) {
+        for (size_t j = 0; j < size; ++j) {
+            uchar blue = static_cast<uchar>(rand() % 256);
+            uchar green = static_cast<uchar>(rand() % 256);
+            uchar red = static_cast<uchar>(rand() % 256);
+            image.at<cv::Vec3b>(i, j) = cv::Vec3b(blue, green, red);
+        }
+    }
+
+    return image;
+}
 
 
 

@@ -1,7 +1,7 @@
 CXX := g++
 OPENCV_INSTALL_DIR := /usr
 #CXXFLAGS := -Iinclude -I$(OPENCV_INSTALL_DIR)/include/opencv4 -std=c++11 -Wall
-LDFLAGS := -L$(OPENCV_INSTALL_DIR)/lib/ -L$(OPENCV_INSTALL_DIR)/lib/x86_64-linux-gnu/ -lopencv_core -lopencv_imgproc -lopencv_imgcodecs -lpthread 
+LDFLAGS := -L$(OPENCV_INSTALL_DIR)/lib/ -L$(OPENCV_INSTALL_DIR)/lib/x86_64-linux-gnu/ -lopencv_core -lopencv_imgproc -lopencv_imgcodecs -lopencv_highgui -lpthread 
 #GTESTFLAGS := -lgtest -lgtest_main -pthread
 CXXFLAGS := -Iinclude $(shell pkg-config --cflags opencv4) -std=c++17 -Wall
 #LDFLAGS := -L$(OPENCV_INSTALL_DIR)/lib/ -L$(OPENCV_INSTALL_DIR)/lib/x86_64-linux-gnu/ $(shell pkg-config --libs opencv4) -lpthread
