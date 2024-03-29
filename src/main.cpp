@@ -87,8 +87,8 @@ cv::Mat generateMatrixWithDistribution(size_t size) {
     cv::Mat image = generateMatrixWithVariableRegions(size, regionsX, regionsY);
 
     // cv::namedWindow("Exemplu", cv::WINDOW_AUTOSIZE);
-    cv::imshow("Generated Image", image);
-    cv::waitKey(0);
+    //cv::imshow("Generated Image", image);
+    //cv::waitKey(0);
 
     return image;
 }
@@ -153,7 +153,7 @@ int simulate(size_t maxImgColAndRowSize, size_t topNgranularity) {
 
     std::vector<std::function<std::vector<PixelCoord>(ImageProcessor<uint16_t>, int)>> processFunctions = {
         &ImageProcessor<uint16_t>::processImageHeapNextPixel,
-        &ImageProcessor<uint16_t>::processImageHeapNice
+        &ImageProcessor<uint16_t>::processImageParallel
         // add here new fc for testing
     };
 
@@ -215,8 +215,8 @@ int main(int argc, char** argv) {
     std::string outputJsonPath = argv[3];
     std::string outputJsonPathParallel = std::string("Parallel_") + argv[3];
 
-    size_t topNgranularity = 20;
-    size_t maxImgColAndRowSize = 10000; // Max image row and col size
+    size_t topNgranularity = 10;
+    size_t maxImgColAndRowSize = 1000; // Max image row and col size
 
     simulate(maxImgColAndRowSize, topNgranularity);
 

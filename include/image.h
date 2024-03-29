@@ -32,7 +32,7 @@ public:
     virtual T cols() const = 0;
     virtual size_t size() const = 0;
 
-    virtual T getNextPixelValue() {
+    virtual inline T getNextPixelValue() {
         //if (imgPtr != nullptr) {
             return *(imgPtr++);
         //}
@@ -167,7 +167,7 @@ public:
     }
 
 
-    T getNextPixelValue() {
+    T inline getNextPixelValue() {
         if (xstart >= rows() || ystart >= cols()) {
             return T(); 
             throw std::runtime_error("Unsupported pixel value.");
