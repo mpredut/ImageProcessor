@@ -362,6 +362,13 @@ std::vector<PixelCoord> processImage(size_t topN) {
     // Add the remaining pixels from the next row
     for (size_t x = 0; x < remainingPixels; ++x) {
         v.emplace_back(x, completeRows);
+                    T pixelValue = image.getNextPixelValue();
+            std::cout <<"XXXX" << 0 << " " << x << " = " << pixelValue << std::endl;
+             
+    for(auto& it : v) {
+        std::cout << it.x << " " << it.y << std::endl;
+    }
+    std::cout <<"END" << std::endl;
     }
 
     // Initialize the heap with the added pixels
@@ -391,7 +398,10 @@ std::vector<PixelCoord> processImage(size_t topN) {
             std::push_heap(v.begin(), v.end(), comp);
         }
     }
-
+    for(auto& it : v) {
+        std::cout << it.x << " " << it.y << std::endl;
+    }
+    std::cout <<"END" << std::endl;
  
     bool heap_updated = false;
     // Process the rest of the image, if there is any
@@ -403,6 +413,7 @@ std::vector<PixelCoord> processImage(size_t topN) {
             T heapMinValue = 0; 
             if(heap_updated) {
                 heapMinValue = image.getPixelValue(v.front().x, v.front().y);
+                 std::cout <<"heap pos " << v.front().x << " " << v.front().y << " = " << heapMinValue << " versus pix " <<  pixelValue<<  std::endl;
             }
             //PixelCoord currentPixel(x, y);
             // Only if the heap is full, compare and possibly replace the min heap
@@ -413,15 +424,20 @@ std::vector<PixelCoord> processImage(size_t topN) {
                 v.emplace_back(x, y);
                 std::push_heap(v.begin(), v.end(), comp);
                 heap_updated = true;
-            } else heap_updated  = false;
+                  std::cout <<"XXXX" << y << " " << x << " = " << pixelValue << " versus " << heapMinValue <<  std::endl;
+            } else 
+                heap_updated  = false;
         }
     } 
-/* 
+ 
     for(auto& it : v) {
         std::cout << it.x << " " << it.y << std::endl;
     }
 
- */    
+static int x = 0;
+x++;
+//if(x == 2) exit(0);
+    
     return v;
 }
 

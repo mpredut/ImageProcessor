@@ -171,25 +171,35 @@ public:
     // reset imgPtr 
     void moveToStart(size_t offset = 0) { //todo: uses offset
         xstart = 0; ystart = 0; 
-        xstart = offset / cols();
-        ystart = offset % cols();
+
+        ystart = offset / cols();
+        xstart = offset % cols();
+         std::cout << "move here: " << ystart << " " << xstart << std::endl;
     }
 
 
     T inline getNextPixelValue() {
-        if (xstart >= rows() || ystart >= cols()) {
+        if (xstart >= cols() || ystart >= rows()) {
             return T(); 
             throw std::runtime_error("Unsupported pixel value.");
         }
-        T value = getPixelValue(ystart, xstart);
-
-        ++ystart;
-
-        if (ystart >= cols()) {
-            ystart = 0;
-            ++xstart; 
+        T value = getPixelValue(xstart, ystart);
+        std::cout << "cere pixel pt. " << ystart << " " << xstart <<  " intorce " << value << std::endl;
+   
+   
+   if(ystart == 6) {
+        for (const auto& pixel : data) {
+            auto [color, x, y] = pixel;
+            std::cout << "Color: " << color << " at (" << x << ", " << y << ")\n";
         }
+        } 
+        ++xstart;
 
+        if (xstart >= cols()) {
+            xstart = 0;
+            ++ystart; 
+        }
+        
         return value;
     }
 
