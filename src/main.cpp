@@ -154,7 +154,7 @@ int simulate(size_t maxImgColAndRowSize, size_t topNgranularity) {
 
     std::vector<std::function<std::vector<PixelCoord>(ImageProcessor<uint16_t>, int)>> processFunctions = {
         &ImageProcessor<uint16_t>::processImageHeapBest,
-        &ImageProcessor<uint16_t>::processImageHeapBest1
+        &ImageProcessor<uint16_t>::processImageHeap
     };
 
    // matrix list generators
@@ -219,7 +219,7 @@ int main(int argc, char** argv) {
     std::string outputJsonPathParallel = std::string("Parallel_") + argv[3];
 
     size_t topNgranularity = 10;
-    size_t maxImgColAndRowSize = 1000; // Max image row and col size
+    size_t maxImgColAndRowSize = 2000; // Max image row and col size
 
     simulate(maxImgColAndRowSize, topNgranularity);
 

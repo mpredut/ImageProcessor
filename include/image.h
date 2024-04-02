@@ -42,12 +42,10 @@ public:
 
     // reset imgPtr 
      virtual void moveToStart(size_t offset = 0) const {
-        std::cout << "move " << offset << std::endl;
+        // TODO: take care if imgStartPtr is nullptr
         imgPtr = (const_cast<T*>(imgStartPtr) + offset);
-        std::cout << (size_t)&imgPtr << std::endl;
-         std::cout << (size_t)&imgStartPtr << std::endl;
-         std::cout << "Type of param: " << typeid(decltype(*imgPtr)).name() << std::endl;
-         std::cout << "Type of param: " << typeid(T).name() << std::endl;
+        //std::cout << (size_t)&imgPtr << std::endl;
+        //std::cout << (size_t)&imgStartPtr << std::endl;
     }
 
     //
@@ -174,7 +172,7 @@ public:
 
         ystart = offset / cols();
         xstart = offset % cols();
-         std::cout << "move here: " << ystart << " " << xstart << std::endl;
+        //std::cout << "move here: " << ystart << " " << xstart << std::endl;
     }
 
 
@@ -184,15 +182,8 @@ public:
             throw std::runtime_error("Unsupported pixel value.");
         }
         T value = getPixelValue(xstart, ystart);
-        std::cout << "cere pixel pt. " << ystart << " " << xstart <<  " intorce " << value << std::endl;
+        //std::cout << "cere pixel pt. " << ystart << " " << xstart <<  " intorce " << value << std::endl;
    
-   
-   if(ystart == 6) {
-        for (const auto& pixel : data) {
-            auto [color, x, y] = pixel;
-            std::cout << "Color: " << color << " at (" << x << ", " << y << ")\n";
-        }
-        } 
         ++xstart;
 
         if (xstart >= cols()) {

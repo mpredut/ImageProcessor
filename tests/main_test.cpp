@@ -134,12 +134,12 @@ TEST(Test, TestFunctionality1) {
     for (const auto& pixelCoord : topNpix) {
         std::cout << 
         "PixelCoord x: " << pixelCoord.x << ", y: " << pixelCoord.y << "\n";
-    }
+    } 
 
     VectorImage<uint16_t> img2({{888, 0, 0}, {777, 5, 6}, {150, 3, 3}});
     ImageProcessor<uint16_t> ip2(img2);
-    topNpix = ip2.processImage(topN);
     img2.printImage();
+    topNpix = ip2.processImage(topN);
     ASSERT_LE(topNpix.size() , topN);
     ASSERT_GT(topNpix.size() , 0);
     ASSERT_EQ(topNpix[0].x , 0);
@@ -148,17 +148,18 @@ TEST(Test, TestFunctionality1) {
 
     VectorImage<uint16_t> img3({{1, 0, 0}, {777, 2, 3}, {989, 6, 5}});
     ImageProcessor<uint16_t> ip3(img3);
-    topNpix = ip3.processImage(topN);
     img3.printImage();
+    topNpix = ip3.processImage(topN);
     ASSERT_LE(topNpix.size() , topN);
     ASSERT_GT(topNpix.size() , 0);
     ASSERT_EQ(topNpix[0].x , 6);
     ASSERT_EQ(topNpix[0].y , 5);
 
+    topN++;
     VectorImage<uint16_t> img4({{1, 0, 0}, {777, 2, 3}, {777, 3, 5}});
     ImageProcessor<uint16_t> ip4(img4);
-    topNpix = ip4.processImage(topN);
     img4.printImage();
+    topNpix = ip4.processImage(topN);
     ASSERT_LE(topNpix.size() , topN);
     ASSERT_GT(topNpix.size() , 0);
     ASSERT_EQ(topNpix[0].x , 2);

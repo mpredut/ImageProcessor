@@ -68,9 +68,13 @@ public:
 
 
 
-std::vector<PixelCoord> processImageHeapBest(size_t topN) {
+std::vector<PixelCoord> processImage(size_t topN) {
     std::vector<PixelCoord> v;
     v = processImageParallel(topN);
+/* 
+    static int c = 0;c++;
+    if (c == 5) exit(0); */
+
     return v;
 }
 
@@ -336,7 +340,7 @@ std::vector<PixelCoord> processImageHeapUnrolling(size_t topN) {
 
 
 
-std::vector<PixelCoord> processImage(size_t topN) {
+std::vector<PixelCoord> processImageHeapBest(size_t topN) {
     std::vector<PixelCoord> v;
     ComparePixelCoord comp(image);
 
@@ -362,35 +366,27 @@ std::vector<PixelCoord> processImage(size_t topN) {
     // Add the remaining pixels from the next row
     for (size_t x = 0; x < remainingPixels; ++x) {
         v.emplace_back(x, completeRows);
-                    T pixelValue = image.getNextPixelValue();
-            std::cout <<"XXXX" << 0 << " " << x << " = " << pixelValue << std::endl;
-             
-    for(auto& it : v) {
-        std::cout << it.x << " " << it.y << std::endl;
-    }
-    std::cout <<"END" << std::endl;
     }
 
     // Initialize the heap with the added pixels
     std::make_heap(v.begin(), v.end(), comp);
 
     //before processs to next pixels jump image pointer to correct position
-    //image.moveToStart(topN);
+    image.moveToStart(topN);
     VectorImage<T>* derivedImg = dynamic_cast<VectorImage<T>*>(&image);
     if (derivedImg) {
-        // Image este de tip DerivedImage, gestionați cererea aici
         derivedImg->moveToStart(topN);
     } 
-    // Process the rest of the image, if there is any
+    /*
+        Because heap is full, compare and possibly replace the min heap
+    */ 
+    // Process the rest of the row, if there is any
+    T heapMinValue = 0;
+    T pixelValue = 0;
     size_t y = completeRows;
     for (size_t x = remainingPixels; x < image.cols(); ++x) {
-        //T pixelValue = image.getPixelValue(x, y);
-        T pixelValue = image.getNextPixelValue(); 
-        //std::cout <<"XXXX" << y << " " << x << " = " << pixelValue << std::endl;
-        T heapMinValue = image.getPixelValue(v.front().x, v.front().y);
-        //PixelCoord currentPixel(x, y);
-        // Only if the heap is full, compare and possibly replace the min heap
-        //if (comp(v.front(), currentPixel)) {
+        pixelValue = image.getNextPixelValue(); 
+        heapMinValue = image.getPixelValue(v.front().x, v.front().y);
         if (pixelValue > heapMinValue) {
             std::pop_heap(v.begin(), v.end(), comp);
             v.pop_back(); 
@@ -398,45 +394,27 @@ std::vector<PixelCoord> processImage(size_t topN) {
             std::push_heap(v.begin(), v.end(), comp);
         }
     }
-    for(auto& it : v) {
-        std::cout << it.x << " " << it.y << std::endl;
-    }
-    std::cout <<"END" << std::endl;
- 
-    bool heap_updated = false;
-    // Process the rest of the image, if there is any
+
+    bool heap_updated = true;
+    // Process the rest of the iamge from (completeRows + 1) row to the end, if there is any
     for (size_t y = completeRows + 1; y < image.rows(); ++y) {
         for (size_t x = 0; x < image.cols(); ++x) {
-            //T pixelValue = image.getPixelValue(x, y);
-            T pixelValue = image.getNextPixelValue();
-            std::cout <<"XXXX" << y << " " << x << " = " << pixelValue << std::endl;
-            T heapMinValue = 0; 
+            pixelValue = image.getNextPixelValue(); //T pixelValue = image.getPixelValue(x, y);
             if(heap_updated) {
                 heapMinValue = image.getPixelValue(v.front().x, v.front().y);
-                 std::cout <<"heap pos " << v.front().x << " " << v.front().y << " = " << heapMinValue << " versus pix " <<  pixelValue<<  std::endl;
             }
-            //PixelCoord currentPixel(x, y);
-            // Only if the heap is full, compare and possibly replace the min heap
-            //if (comp(v.front(), currentPixel)) {
+            // compare and possibly replace the min heap
              if (pixelValue > heapMinValue) {
                 std::pop_heap(v.begin(), v.end(), comp);
                 v.pop_back(); 
                 v.emplace_back(x, y);
                 std::push_heap(v.begin(), v.end(), comp);
                 heap_updated = true;
-                  std::cout <<"XXXX" << y << " " << x << " = " << pixelValue << " versus " << heapMinValue <<  std::endl;
-            } else 
+            } else {
                 heap_updated  = false;
+            }
         }
-    } 
- 
-    for(auto& it : v) {
-        std::cout << it.x << " " << it.y << std::endl;
     }
-
-static int x = 0;
-x++;
-//if(x == 2) exit(0);
     
     return v;
 }
@@ -474,15 +452,20 @@ std::vector<PixelCoord> processImageHeapBest1(size_t topN) {
     // Initialize the heap with the added pixels
     std::make_heap(v.begin(), v.end(), comp);
 
-    // Process the rest of the image, if there is any
+    //before processs to next pixels jump image pointer to correct position
+    image.moveToStart(topN);
+    VectorImage<T>* derivedImg = dynamic_cast<VectorImage<T>*>(&image);
+    if (derivedImg) {
+        derivedImg->moveToStart(topN);
+    }
+    /*
+        Because heap is full, compare and possibly replace the min heap
+    */ 
+    // Process the rest of the row, if there is any
     size_t y = completeRows;
     for (size_t x = remainingPixels; x < image.cols(); ++x) {
-        //T pixelValue = image.getPixelValue(x, y);
         T pixelValue = image.getNextPixelValue(); 
         T heapMinValue = image.getPixelValue(v.front().x, v.front().y);
-        //PixelCoord currentPixel(x, y);
-        // Only if the heap is full, compare and possibly replace the min heap
-        //if (comp(v.front(), currentPixel)) {
         if (pixelValue > heapMinValue) {
             std::pop_heap(v.begin(), v.end(), comp);
             v.pop_back(); 
@@ -491,24 +474,21 @@ std::vector<PixelCoord> processImageHeapBest1(size_t topN) {
         }
     }
 
-    // Process the rest of the image, if there is any
+    // Process the rest of the image from (completeRows + 1) row to the end, if there is any
     for (size_t y = completeRows + 1; y < image.rows(); ++y) {
         for (size_t x = 0; x < image.cols(); ++x) {
-            //T pixelValue = image.getPixelValue(x, y);
-            T pixelValue = image.getNextPixelValue();
+            T pixelValue = image.getNextPixelValue(); //T pixelValue = image.getPixelValue(x, y);
             T heapMinValue = image.getPixelValue(v.front().x, v.front().y);
-            //PixelCoord currentPixel(x, y);
-            // Only if the heap is full, compare and possibly replace the min heap
-            //if (comp(v.front(), currentPixel)) {
+            // compare and possibly replace the min heap
              if (pixelValue > heapMinValue) {
                 std::pop_heap(v.begin(), v.end(), comp);
                 v.pop_back(); 
                 v.emplace_back(x, y);
                 std::push_heap(v.begin(), v.end(), comp);
-            } 
+            }
         }
-    } 
-
+    }
+    
     return v;
 }
 
@@ -565,7 +545,6 @@ std::vector<PixelCoord> processImageParallel(size_t topN) {
     std::vector<std::thread> threads(numThreads);
     ComparePixelCoord comp(image);
 
-    // Calculăm numărul de linii pe care fiecare thread trebuie să le proceseze
     size_t rowsPerThread = image.rows() / numThreads;
 
     for (size_t i = 0; i < numThreads; ++i) {
@@ -579,7 +558,6 @@ std::vector<PixelCoord> processImageParallel(size_t topN) {
         threads[i] = std::thread(std::bind(&ImageProcessor::processSubImage, this, std::ref(localHeaps[i]), topN, startY, endY));
     }
 
-    // Așteptăm finalizarea execuției fiecărui thread
     for (auto& thread : threads) {
         thread.join();
     }
@@ -587,7 +565,7 @@ std::vector<PixelCoord> processImageParallel(size_t topN) {
 
   auto start = std::chrono::high_resolution_clock::now();
 
-    // Combinăm heap-urile locale într-unul global
+    // Combine local heaps in one global
     std::vector<PixelCoord> finalHeap;
     for (const auto& heap : localHeaps) {
         for (const auto& coord : heap) {
@@ -597,6 +575,7 @@ std::vector<PixelCoord> processImageParallel(size_t topN) {
             }
             //std::push_heap(finalHeap.begin(), finalHeap.end(), comp);
             if (finalHeap.size() > topN) {
+                std::push_heap(finalHeap.begin(), finalHeap.end(), comp);
                 std::pop_heap(finalHeap.begin(), finalHeap.end(), comp);
                 finalHeap.pop_back();
             }
@@ -612,6 +591,7 @@ std::vector<PixelCoord> processImageParallel(size_t topN) {
     
     //std::sort_heap(v.begin(), v.end(), ComparePixel());
     //std::sort(finalHeap.begin(), finalHeap.end(), comp);
+
     return finalHeap;
 }
 
