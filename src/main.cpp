@@ -109,13 +109,14 @@ std::vector<size_t> generateTopNValues(size_t size, size_t steps) {
 }
 
 
-void processAndMeasure(size_t dimm, size_t topN, size_t processImageId, 
+void processAndMeasure(size_t idx, size_t dimm, size_t topN, 
     const std::string& outputFile, 
     ImageProcessor<uint16_t>& ip,
+    size_t processid,
     std::vector<std::function<std::vector<PixelCoord>(ImageProcessor<uint16_t>, int)>>& processFunctions
 ) {
     
-    if (processImageId >= processFunctions.size()) {
+    if (processid >= processFunctions.size()) {
             std::cout << "ID unavailable!." << std::endl;
             return;
     } 
@@ -123,7 +124,7 @@ void processAndMeasure(size_t dimm, size_t topN, size_t processImageId,
     struct rusage usageStart, usageEnd;
     getrusage(RUSAGE_SELF, &usageStart);
     auto start = std::chrono::high_resolution_clock::now();
-    auto topPixels = processFunctions[processImageId](ip, topN);
+    auto topPixels = processFunctions[processid](ip, topN);
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> execTime = end - start;
     getrusage(RUSAGE_SELF, &usageEnd);
@@ -132,11 +133,11 @@ void processAndMeasure(size_t dimm, size_t topN, size_t processImageId,
     long cost = execTime.count() * 0.8 + memoryUsed * 0.2;
 
     std::ofstream file(outputFile, std::ios_base::app);
-    file << dimm << "," << topN << "," << processImageId << 
-    "," << execTime.count() << "," << memoryUsed <<  "," << cost << "\n";
+    file <<  idx << "," << dimm << "," << topN << "," << processid << 
+"," << execTime.count() << "," << memoryUsed <<  "," << cost << "\n";
     file.close();
 
-    std::cout << "TopN: " << topN << ", IDMethod: " << processImageId << 
+    std::cout << "TopN: " << topN << ", IDMethod: " << processid << 
     ", ExecTime: " << execTime.count() << " ms, MemUsed: " << memoryUsed << " KB" << std::endl;
 }
 
@@ -147,14 +148,13 @@ int simulate(size_t maxImgColAndRowSize, size_t topNgranularity) {
   //init CSV with head
     std::string outputFile = "matrix_data.csv";
     std::ofstream file(outputFile);
-    file << "Dimension,topN,IDMethod,ExecTime,MemUsed,Cost\n";
+    file << "Type,Dimension,topN,IDMethod,ExecTime,MemUsed,Cost\n";
     file.close();
 
 
     std::vector<std::function<std::vector<PixelCoord>(ImageProcessor<uint16_t>, int)>> processFunctions = {
-        &ImageProcessor<uint16_t>::processImageHeapNextPixel,
-        &ImageProcessor<uint16_t>::processImageParallel
-        // add here new fc for testing
+        &ImageProcessor<uint16_t>::processImageHeapBest,
+        &ImageProcessor<uint16_t>::processImageHeapBest1
     };
 
    // matrix list generators
@@ -169,6 +169,7 @@ int simulate(size_t maxImgColAndRowSize, size_t topNgranularity) {
         // add here static fc for generate matrix with description
     };
 
+    size_t idx = 0;
     for (auto& generatorWithDesc : matrixGenerators) {
         auto generateMatrix = generatorWithDesc.first; // fc generator
         const auto& description = generatorWithDesc.second; // Descrierea
@@ -190,10 +191,12 @@ int simulate(size_t maxImgColAndRowSize, size_t topNgranularity) {
                 //std::cout << "Img row: " << image.rows << " img col: " <<  image.cols << std::endl;    
                 std::cout << "Running: " << description << " | Img row: " << image.rows << " img col: " << image.cols << std::endl;      
                 for(size_t i = 0; i < processFunctions.size(); ++i) {                     
-                    processAndMeasure(wrapper.size(), topN, i, outputFile, ip, processFunctions); 
+                    processAndMeasure(idx, wrapper.size(), topN,  outputFile, ip, i, processFunctions); 
                 }
             }
         }
+
+        ++idx;
     }
 
 

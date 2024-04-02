@@ -13,6 +13,7 @@
 #include <iostream>
 #include <stdexcept>
 
+
 //Interface
 template <typename T>
 class IImage {
@@ -40,8 +41,13 @@ public:
     }
 
     // reset imgPtr 
-    void moveToStart() const {
-        imgPtr = const_cast<T*>(imgStartPtr);
+     virtual void moveToStart(size_t offset = 0) const {
+        std::cout << "move " << offset << std::endl;
+        imgPtr = (const_cast<T*>(imgStartPtr) + offset);
+        std::cout << (size_t)&imgPtr << std::endl;
+         std::cout << (size_t)&imgStartPtr << std::endl;
+         std::cout << "Type of param: " << typeid(decltype(*imgPtr)).name() << std::endl;
+         std::cout << "Type of param: " << typeid(T).name() << std::endl;
     }
 
     //
@@ -107,6 +113,7 @@ public:
     T rows() const override { return image.rows; }
     T cols() const override { return image.cols; }
     size_t size() const override { return static_cast<size_t>(image.total()); }
+    
 };
 
 
@@ -162,8 +169,10 @@ public:
     };
 
     // reset imgPtr 
-    void moveToStart() {
+    void moveToStart(size_t offset = 0) { //todo: uses offset
         xstart = 0; ystart = 0; 
+        xstart = offset / cols();
+        ystart = offset % cols();
     }
 
 

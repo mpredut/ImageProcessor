@@ -135,6 +135,14 @@ TEST(Test, TestFunctionality1) {
         std::cout << 
         "PixelCoord x: " << pixelCoord.x << ", y: " << pixelCoord.y << "\n";
     }
+
+    VectorImage<uint16_t> img2({{888, 0, 0}, {777, 5, 6}, {150, 3, 3}});
+    topNpix = ip.processImage(topN);
+    ASSERT_LE(topNpix.size() , topN);
+    ASSERT_GT(topNpix.size() , 0);
+    ASSERT_EQ(topNpix[0].x , 0);
+    ASSERT_EQ(topNpix[0].y , 0);
+
 }
 
 TEST(Test, TestFunctionality2) {
@@ -146,9 +154,9 @@ TEST(Test, TestFunctionality2) {
     ImageProcessor<uint16_t> ip(img);
     std::vector<PixelCoord> topNpix = ip.processImage(topN);
     ASSERT_EQ(topNpix.size() , topN);
-    ASSERT_EQ(topNpix[0].x , 5);
+    ASSERT_EQ(topNpix[0].x , 4);
     ASSERT_EQ(topNpix[0].y , 6);
-    ASSERT_EQ(topNpix[1].x , 4);
+    ASSERT_EQ(topNpix[1].x , 5);
     ASSERT_EQ(topNpix[1].y , 6);
      
     for (const auto& pixelCoord : topNpix) {
@@ -293,7 +301,7 @@ TEST(ImageProcessingPerformance, processImageHeapNice) {
     ImageProcessor<uint16_t> processor(img);
 
     auto start = std::chrono::high_resolution_clock::now();
-    auto topNpix = processor.processImageHeapNice(topN);
+    auto topNpix = processor.processImageHeapUnrolling(topN);
     auto end = std::chrono::high_resolution_clock::now();
 
     std::chrono::duration<double, std::milli> duration = end - start;

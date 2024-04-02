@@ -1,0 +1,52 @@
+@startuml
+left to right direction
+!define RECTANGLE class
+
+RECTANGLE Start
+RECTANGLE "Prepare dataset with high-quality,\nrelevant, and synthetic data" as PrepareDataset
+RECTANGLE "Run multiple algorithms\non the prepared dataset" as RunAlgorithms
+RECTANGLE "Measure performance of each algorithm\n(Accuracy, Response Time, Memory Usage)" as MeasurePerformance
+RECTANGLE "Generate data for the ML model\n(Performance metrics as features,\nAlgorithm choice as label)" as GenerateData
+
+Start --> PrepareDataset
+PrepareDataset --> RunAlgorithms
+RunAlgorithms --> MeasurePerformance
+MeasurePerformance --> GenerateData
+@enduml
+
+
+Start --> RunAlgorithms
+RunAlgorithms --> MeasurePerformance
+MeasurePerformance --> GenerateData
+@enduml
+
+@startuml
+left to right direction
+!define RECTANGLE class
+
+RECTANGLE "Select ML model for training\n(Ex: RandomForestClassifier, LogisticRegression)" as SelectModel
+RECTANGLE "Train the ML model with generated data" as TrainModel
+RECTANGLE "Evaluate and adjust the ML model\nif necessary" as EvaluateModel
+
+SelectModel --> TrainModel
+TrainModel --> EvaluateModel
+@enduml
+
+
+@startuml
+left to right direction
+!define RECTANGLE class
+
+RECTANGLE "Export the model's coefficients and\nweights from Python" as ExportModel
+RECTANGLE "Convert to a format interpretable by C++" as ConvertFormat
+RECTANGLE "Implement the model in C++\n(Write C++ code using coefficients and weights)" as ImplementCplusplus
+RECTANGLE "Use the C++ implementation to predict\nthe best algorithm based on\nnew datasets' performance metrics" as UseCPP
+RECTANGLE "Evaluate and adjust model performance\nin C++ after implementation" as AdjustCPP
+RECTANGLE End
+
+ExportModel --> ConvertFormat
+ConvertFormat --> ImplementCplusplus
+ImplementCplusplus --> UseCPP
+UseCPP --> AdjustCPP
+AdjustCPP --> End
+@enduml
