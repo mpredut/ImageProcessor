@@ -69,7 +69,6 @@ cv::Mat generateMatrixSort(size_t size, int increment) {
         for (size_t j = 0; j < size; ++j) {
             image.at<uint16_t>(j, i) = start;
             start += increment;
-            std::cout << start << " " << std:: endl;
         }
     }
 
