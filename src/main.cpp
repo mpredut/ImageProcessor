@@ -54,21 +54,27 @@ cv::Mat generateMatrix(size_t size) {
         }
     }
 
+    //cv::imshow("Generated Image", image);
+    //cv::waitKey(0);
+
     return image;
 }
 
 cv::Mat generateMatrixSort(size_t size, int increment) {
-    int start = 0;
+    uint16_t start = 0;
     cv::Mat image(size, size, CV_16U);
 
     if(increment < 0) start = size * size - 1;
     for (size_t i = 0; i < size; ++i) {
         for (size_t j = 0; j < size; ++j) {
-            image.at<uint16_t>(i, j) = start;
-            start =+ increment;
+            image.at<uint16_t>(j, i) = start;
+            start += increment;
+            std::cout << start << " " << std:: endl;
         }
     }
 
+    //cv::imshow("Generated Image", image);
+    //cv::waitKey(0);
     return image;
 }
 
@@ -76,7 +82,7 @@ cv::Mat generateMatrixSortA(size_t size) {
     return generateMatrixSort(size, 1);
 }
 cv::Mat generateMatrixSortD(size_t size) {
-    return generateMatrixSort(size, -11);
+    return generateMatrixSort(size, -1);
 }
 
 
@@ -86,7 +92,6 @@ cv::Mat generateMatrixWithDistribution(size_t size) {
 
     cv::Mat image = generateMatrixWithVariableRegions(size, regionsX, regionsY);
 
-    // cv::namedWindow("Exemplu", cv::WINDOW_AUTOSIZE);
     //cv::imshow("Generated Image", image);
     //cv::waitKey(0);
 
@@ -153,8 +158,8 @@ int simulate(size_t maxImgColAndRowSize, size_t topNgranularity) {
 
 
     std::vector<std::function<std::vector<PixelCoord>(ImageProcessor<uint16_t>, int)>> processFunctions = {
-        &ImageProcessor<uint16_t>::processImageHeapBest,
-        &ImageProcessor<uint16_t>::processImageHeap
+        &ImageProcessor<uint16_t>::processImageHeap,
+        &ImageProcessor<uint16_t>::processImageHeapBest
     };
 
    // matrix list generators
@@ -219,7 +224,7 @@ int main(int argc, char** argv) {
     std::string outputJsonPathParallel = std::string("Parallel_") + argv[3];
 
     size_t topNgranularity = 10;
-    size_t maxImgColAndRowSize = 2000; // Max image row and col size
+    size_t maxImgColAndRowSize = 1000; // Max image row and col size
 
     simulate(maxImgColAndRowSize, topNgranularity);
 

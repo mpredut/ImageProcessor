@@ -40,6 +40,12 @@ public:
         return T();
     }
 
+    virtual inline T* getPixelPtr() {
+        //if (imgPtr != nullptr) {
+            return imgPtr;
+        //}
+        return T();
+    }
     // reset imgPtr 
      virtual void moveToStart(size_t offset = 0) const {
         // TODO: take care if imgStartPtr is nullptr

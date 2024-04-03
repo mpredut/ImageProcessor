@@ -117,11 +117,11 @@ std::vector<PixelCoord> processImageHeap(size_t topN) {
 
     v.reserve(topN);
     for (int y = 0; y < image.rows(); ++y) {
+        __builtin_prefetch(image.getPixelPtr());
         for (int x = 0; x < image.cols(); ++x) {
-            if (v.size() < topN) {
+            if (__builtin_expect(v.size() < topN, 1)) {
                 v.emplace_back(x, y);
-                std::push_heap(v.begin(), v.end(), comp);//todo!! : move it
-                //if(v.size() == topN) std::make_heap(v.begin(), v.end(), comp);
+                std::push_heap(v.begin(), v.end(), comp);
             } else {
                 T pixelValue = image.getPixelValue(x, y);
                 T heapMinValue = image.getPixelValue(v.front().x, v.front().y);
@@ -131,11 +131,9 @@ std::vector<PixelCoord> processImageHeap(size_t topN) {
                     v.pop_back();
 
                     v.emplace_back(x, y);
-                    std::push_heap(v.begin(), v.end(), comp);//todo!! : move it
+                    std::push_heap(v.begin(), v.end(), comp);
                 }
-               // std::push_heap(v.begin(), v.end(), comp);//todo!! : move it
             }
-            //std::push_heap(v.begin(), v.end(), comp);//todo!! : move it
         }
     }
 
@@ -307,9 +305,6 @@ std::vector<PixelCoord> processImageHeapUnrolling(size_t topN) {
     for (size_t x = remainingPixels; x < image.cols(); ++x) {
         T pixelValue = image.getPixelValue(x, y);
         T heapMinValue = image.getPixelValue(v.front().x, v.front().y);
-        //PixelCoord currentPixel(x, y);
-        // Only if the heap is full, compare and possibly replace the min heap
-        //if (comp(v.front(), currentPixel)) {
         if (pixelValue > heapMinValue) {
             std::pop_heap(v.begin(), v.end(), comp);
             v.pop_back(); 
@@ -323,10 +318,7 @@ std::vector<PixelCoord> processImageHeapUnrolling(size_t topN) {
         for (size_t x = 0; x < image.cols(); ++x) {
             T pixelValue = image.getPixelValue(x, y);
             T heapMinValue = image.getPixelValue(v.front().x, v.front().y);
-            //PixelCoord currentPixel(x, y);
-            // Only if the heap is full, compare and possibly replace the min heap
-            //if (comp(v.front(), currentPixel)) {
-             if (pixelValue > heapMinValue) {
+            if (pixelValue > heapMinValue) {
                 std::pop_heap(v.begin(), v.end(), comp);
                 v.pop_back(); 
                 v.emplace_back(x, y);
@@ -398,13 +390,14 @@ std::vector<PixelCoord> processImageHeapBest(size_t topN) {
     bool heap_updated = true;
     // Process the rest of the iamge from (completeRows + 1) row to the end, if there is any
     for (size_t y = completeRows + 1; y < image.rows(); ++y) {
+        __builtin_prefetch(image.getPixelPtr());
         for (size_t x = 0; x < image.cols(); ++x) {
             pixelValue = image.getNextPixelValue(); //T pixelValue = image.getPixelValue(x, y);
             if(heap_updated) {
                 heapMinValue = image.getPixelValue(v.front().x, v.front().y);
             }
             // compare and possibly replace the min heap
-             if (pixelValue > heapMinValue) {
+             if (__builtin_expect(pixelValue > heapMinValue, 0)) {
                 std::pop_heap(v.begin(), v.end(), comp);
                 v.pop_back(); 
                 v.emplace_back(x, y);
