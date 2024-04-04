@@ -713,7 +713,7 @@ struct AltComp {
 
     AltComp(size_t x, size_t y, unsigned short value) : x(x), y(y), value(value) {}
 
-// Comparator pentru a menține elementele în ordine descrescătoare
+// descending order
 bool operator<( const AltComp& rhs) const {
     return this->value < rhs.value;
 };
@@ -722,10 +722,10 @@ bool operator<( const AltComp& rhs) const {
 struct ComparePixelValAndCoordCopy {
     bool operator()(const AltComp& a, const AltComp& b) const {
         if (a.value != b.value) 
-            return a.value > b.value; // Ordine descrescătoare după valoare
+            return a.value > b.value; // descending by value
         if (a.x != b.x) 
-            return a.x < b.x;  // Dacă valorile sunt egale, ordonează crescător după x
-        return a.y < b.y;  // Apoi după y, pentru a asigura unicitatea
+            return a.x < b.x;  // if values are equal, sort ascending by x
+        return a.y < b.y;  // then by y, pentru a asigura unicitatea
     }
 };
 
@@ -755,24 +755,20 @@ std::vector<PixelCoord> processImageSetCopy(size_t topN) {
             T pixelValue = image.getPixelValue(x, y);
             AltComp currentPixel(x, y, pixelValue);
 
-            // Adaugă direct dacă nu am ajuns încă la limita topN
             if (topPixels.size() < topN) {
                 topPixels.insert(currentPixel);
             } else {
-                // Dacă elementul curent este mai mare decât cel mai mic din set (ultimul element)
-                auto itLowest = topPixels.begin(); // Elementul cu cea mai mică valoare este primul
+                // If the current element is greater than the smallest in the set (the last element)
+                auto itLowest = topPixels.begin(); // The element with the smallest value is the first
                 if (currentPixel.value > itLowest->value) {
-                    topPixels.erase(itLowest); // Elimină cel mai mic element
-                    topPixels.insert(currentPixel); // Inserează noul element
+                    topPixels.erase(itLowest); // Remove the smallest element
+                    topPixels.insert(currentPixel); // Insert the new element
                 }
             }
         }
     }
 
     return convertSetToVector(topPixels);
-
-    // Convertim setul în vector pentru a returna rezultatul
-   // return std::vector<PixelCoord>(topPixels.begin(), topPixels.end());
 }
 
 
