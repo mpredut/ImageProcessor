@@ -31,9 +31,9 @@ private:
         }
     };
 
-    struct ComparePixel {
+    struct ComparePixelValAndCoord {
         const IImage<T>& img;
-        ComparePixel(const IImage<T>& image) : img(image) {}
+        ComparePixelValAndCoord(const IImage<T>& image) : img(image) {}
 
         bool operator()(const PixelCoord& p1, const PixelCoord& p2) const {
             auto val1 = img.getPixelValue(p1.x, p1.y);
@@ -728,6 +728,7 @@ struct AltCompCompare {
         return a.y < b.y;  // Apoi după y, pentru a asigura unicitatea
     }
 };
+
 
 
 std::vector<PixelCoord> convertSetToVector(const std::set<AltComp, AltCompCompare>& topPixels) {
