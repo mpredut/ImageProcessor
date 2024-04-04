@@ -141,7 +141,7 @@ std::vector<PixelCoord> processImageHeap(size_t topN) {
 
 
 std::vector<PixelCoord> processImageHeapCopy(size_t topN) {
-    std::vector<AltComp> v;
+    std::vector<PixelAll> v;
     //ComparePixelVal comp(image);
     if (topN <= 0 || image.size() < 1) {
         std::cout << "Invalid input: topN is <= 0 or image has no pixels.\n";
@@ -154,7 +154,7 @@ std::vector<PixelCoord> processImageHeapCopy(size_t topN) {
         for (size_t x = 0; x < image.cols(); ++x) {
             if (v.size() < topN) {
                 T pixelValue = image.getPixelValue(x, y);
-                AltComp currentPixel(x, y, pixelValue);
+                PixelAll currentPixel(x, y, pixelValue);
                 v.emplace_back(currentPixel); //   v.emplace_back(x, y);
                 std::push_heap(v.begin(), v.end(), ComparePixelValAndCoordCopy());
             } else {
@@ -165,7 +165,7 @@ std::vector<PixelCoord> processImageHeapCopy(size_t topN) {
                     std::pop_heap(v.begin(), v.end(), ComparePixelValAndCoordCopy());
                     v.pop_back();
 
-                    v.emplace_back(AltComp{x, y, pixelValue});
+                    v.emplace_back(PixelAll{x, y, pixelValue});
                     std::push_heap(v.begin(), v.end(), ComparePixelValAndCoordCopy());
                 }
             }
@@ -174,7 +174,7 @@ std::vector<PixelCoord> processImageHeapCopy(size_t topN) {
 
     // Overhead added here 
     std::vector<PixelCoord> result;
-    std::transform(v.begin(), v.end(), std::back_inserter(result), [](const AltComp& ac) {
+    std::transform(v.begin(), v.end(), std::back_inserter(result), [](const PixelAll& ac) {
         return PixelCoord(ac.x, ac.y); // Sau orice logică de conversie necesară
     });
 
@@ -199,7 +199,7 @@ std::vector<PixelCoord> processImageHeapNextPixel(size_t topN) {
         for (size_t x = 0; x < image.cols(); ++x) {
             //T pixelValue = image.getNextPixelValue(); 
             if (v.size() < topN) {
-                //AltComp currentPixel(x, y, pixelValue);
+                //PixelAll currentPixel(x, y, pixelValue);
                 v.emplace_back(x, y);
                 std::push_heap(v.begin(), v.end(), comp);
             } else {
@@ -220,7 +220,7 @@ std::vector<PixelCoord> processImageHeapNextPixel(size_t topN) {
 }
 
 std::vector<PixelCoord> processImageHeapNextPixelCopy(size_t topN) {
-    std::vector<AltComp> v;
+    std::vector<PixelAll> v;
     if (topN <= 0 || image.size() < 1) {
         std::cout << "Invalid input: topN is <= 0 or image has no pixels.\n";
         return {};
@@ -234,7 +234,7 @@ std::vector<PixelCoord> processImageHeapNextPixelCopy(size_t topN) {
         for (size_t x = 0; x < image.cols(); ++x) {
             T pixelValue = image.getNextPixelValue(); 
             if (v.size() < topN) {
-                AltComp currentPixel(x, y, pixelValue);
+                PixelAll currentPixel(x, y, pixelValue);
                 v.emplace_back(currentPixel);
                 std::push_heap(v.begin(), v.end(), ComparePixelValAndCoordCopy());
             } else {
@@ -243,7 +243,7 @@ std::vector<PixelCoord> processImageHeapNextPixelCopy(size_t topN) {
                     std::pop_heap(v.begin(), v.end(), ComparePixelValAndCoordCopy());
                     v.pop_back();
                     
-                    v.emplace_back(AltComp{x, y, pixelValue});
+                    v.emplace_back(PixelAll{x, y, pixelValue});
                     std::push_heap(v.begin(), v.end(), ComparePixelValAndCoordCopy());
                 }
             }
@@ -252,7 +252,7 @@ std::vector<PixelCoord> processImageHeapNextPixelCopy(size_t topN) {
 
 
     std::vector<PixelCoord> result;
-    std::transform(v.begin(), v.end(), std::back_inserter(result), [](const AltComp& ac) {
+    std::transform(v.begin(), v.end(), std::back_inserter(result), [](const PixelAll& ac) {
         return PixelCoord(ac.x, ac.y); 
     });
 
@@ -707,20 +707,20 @@ std::vector<PixelCoord> processImageCS_MAP( size_t topN) {
     return topPixels;
 }
 
-struct AltComp {
+struct PixelAll {
     size_t x, y;
     unsigned short value;
 
-    AltComp(size_t x, size_t y, unsigned short value) : x(x), y(y), value(value) {}
+    PixelAll(size_t x, size_t y, unsigned short value) : x(x), y(y), value(value) {}
 
 // descending order
-bool operator<( const AltComp& rhs) const {
+bool operator<( const PixelAll& rhs) const {
     return this->value < rhs.value;
 };
 };
 
 struct ComparePixelValAndCoordCopy {
-    bool operator()(const AltComp& a, const AltComp& b) const {
+    bool operator()(const PixelAll& a, const PixelAll& b) const {
         if (a.value != b.value) 
             return a.value > b.value; // descending by value
         if (a.x != b.x) 
@@ -731,7 +731,7 @@ struct ComparePixelValAndCoordCopy {
 
 
 
-std::vector<PixelCoord> convertSetToVector(const std::set<AltComp, ComparePixelValAndCoordCopy>& topPixels) {
+std::vector<PixelCoord> convertSetToVector(const std::set<PixelAll, ComparePixelValAndCoordCopy>& topPixels) {
     std::vector<PixelCoord> result;
     for (const auto& item : topPixels) {
         result.emplace_back(item.x, item.y);
@@ -746,14 +746,14 @@ std::vector<PixelCoord> processImageSetCopy(size_t topN) {
     }
     topN = std::min(topN, image.size());
 
-    std::set<AltComp, ComparePixelValAndCoordCopy> topPixels;
+    std::set<PixelAll, ComparePixelValAndCoordCopy> topPixels;
 
     //topPixels.reserve(topN);
 
     for (size_t y = 0; y < image.rows(); ++y) {
         for (size_t x = 0; x < image.cols(); ++x) {
             T pixelValue = image.getPixelValue(x, y);
-            AltComp currentPixel(x, y, pixelValue);
+            PixelAll currentPixel(x, y, pixelValue);
 
             if (topPixels.size() < topN) {
                 topPixels.insert(currentPixel);
@@ -789,7 +789,7 @@ std::vector<PixelCoord> processImageSet(size_t topN) {
     for (size_t y = 0; y < image.rows(); ++y) {
         for (size_t x = 0; x < image.cols(); ++x) {
             T pixelValue = image.getPixelValue(x, y);
-            //AltComp currentPixel(x, y, pixelValue);
+            //PixelAll currentPixel(x, y, pixelValue);
             if (topPixels.size() < topN) {
                 topPixels.insert({x,y});
             } else {
