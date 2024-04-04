@@ -156,17 +156,17 @@ std::vector<PixelCoord> processImageHeapCopy(size_t topN) {
                 T pixelValue = image.getPixelValue(x, y);
                 AltComp currentPixel(x, y, pixelValue);
                 v.emplace_back(currentPixel); //   v.emplace_back(x, y);
-                std::push_heap(v.begin(), v.end(), AltCompCompare());
+                std::push_heap(v.begin(), v.end(), ComparePixelValAndCoordCopy());
             } else {
                 T pixelValue = image.getPixelValue(x, y);
                 //T heapMinValue = image.getPixelValue(v.front().x, v.front().y);
                 T heapMinValue = v.front().value;
                 if (pixelValue > heapMinValue) {
-                    std::pop_heap(v.begin(), v.end(), AltCompCompare());
+                    std::pop_heap(v.begin(), v.end(), ComparePixelValAndCoordCopy());
                     v.pop_back();
 
                     v.emplace_back(AltComp{x, y, pixelValue});
-                    std::push_heap(v.begin(), v.end(), AltCompCompare());
+                    std::push_heap(v.begin(), v.end(), ComparePixelValAndCoordCopy());
                 }
             }
         }
@@ -236,15 +236,15 @@ std::vector<PixelCoord> processImageHeapNextPixelCopy(size_t topN) {
             if (v.size() < topN) {
                 AltComp currentPixel(x, y, pixelValue);
                 v.emplace_back(currentPixel);
-                std::push_heap(v.begin(), v.end(), AltCompCompare());
+                std::push_heap(v.begin(), v.end(), ComparePixelValAndCoordCopy());
             } else {
                 T heapMinValue = v.front().value;
                 if (pixelValue > heapMinValue) {
-                    std::pop_heap(v.begin(), v.end(), AltCompCompare());
+                    std::pop_heap(v.begin(), v.end(), ComparePixelValAndCoordCopy());
                     v.pop_back();
                     
                     v.emplace_back(AltComp{x, y, pixelValue});
-                    std::push_heap(v.begin(), v.end(), AltCompCompare());
+                    std::push_heap(v.begin(), v.end(), ComparePixelValAndCoordCopy());
                 }
             }
         }
@@ -719,7 +719,7 @@ bool operator<( const AltComp& rhs) const {
 };
 };
 
-struct AltCompCompare {
+struct ComparePixelValAndCoordCopy {
     bool operator()(const AltComp& a, const AltComp& b) const {
         if (a.value != b.value) 
             return a.value > b.value; // Ordine descrescătoare după valoare
@@ -731,7 +731,7 @@ struct AltCompCompare {
 
 
 
-std::vector<PixelCoord> convertSetToVector(const std::set<AltComp, AltCompCompare>& topPixels) {
+std::vector<PixelCoord> convertSetToVector(const std::set<AltComp, ComparePixelValAndCoordCopy>& topPixels) {
     std::vector<PixelCoord> result;
     for (const auto& item : topPixels) {
         result.emplace_back(item.x, item.y);
@@ -746,7 +746,7 @@ std::vector<PixelCoord> processImageSetCopy(size_t topN) {
     }
     topN = std::min(topN, image.size());
 
-    std::set<AltComp, AltCompCompare> topPixels;
+    std::set<AltComp, ComparePixelValAndCoordCopy> topPixels;
 
     //topPixels.reserve(topN);
 
