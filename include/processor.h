@@ -22,15 +22,6 @@ private:
 
 
     // Comparator for the heap, used to maintain pixels with the highest values.
-    struct ComparePixelCoord {
-        const IImage<T>& img;
-        ComparePixelCoord(const IImage<T>& image) : img(image) {}
-
-        bool operator()(const PixelCoord& p1, const PixelCoord& p2) const {
-            return img.getPixelValue(p1.x, p1.y) > img.getPixelValue(p2.x, p2.y);
-        }
-    };
-
     struct ComparePixelVal {
         const IImage<T>& img;
         ComparePixelVal(const IImage<T>& image) : img(image) {}
@@ -94,7 +85,7 @@ std::vector<PixelCoord> processImageSort( size_t topN) {
         }
     }
 
-   std::sort(v.begin(), v.end(),  ComparePixelCoord(image));
+   std::sort(v.begin(), v.end(),  ComparePixelVal(image));
 
     if (v.size() > topN) {
         v.erase(v.begin() + topN, v.end());
@@ -107,7 +98,7 @@ std::vector<PixelCoord> processImageSort( size_t topN) {
 
 std::vector<PixelCoord> processImageHeap(size_t topN) {
     std::vector<PixelCoord> v;
-    ComparePixelCoord comp(image);
+    ComparePixelVal comp(image);
 
     if (topN <= 0 || image.size() < 1) {
         std::cout << "Invalid input: topN is <= 0 or image has no pixels.\n";
@@ -151,7 +142,7 @@ std::vector<PixelCoord> processImageHeap(size_t topN) {
 
 std::vector<PixelCoord> processImageHeapCopy(size_t topN) {
     std::vector<AltComp> v;
-    //ComparePixelCoord comp(image);
+    //ComparePixelVal comp(image);
     if (topN <= 0 || image.size() < 1) {
         std::cout << "Invalid input: topN is <= 0 or image has no pixels.\n";
         return {};
@@ -271,7 +262,7 @@ std::vector<PixelCoord> processImageHeapNextPixelCopy(size_t topN) {
 
 std::vector<PixelCoord> processImageHeapUnrolling(size_t topN) {
     std::vector<PixelCoord> v;
-    ComparePixelCoord comp(image);
+    ComparePixelVal comp(image);
 
     if (topN <= 0 || image.size() < 1) {
         std::cout << "Invalid input: topN is <= 0 or image has no pixels.\n";
@@ -334,7 +325,7 @@ std::vector<PixelCoord> processImageHeapUnrolling(size_t topN) {
 
 std::vector<PixelCoord> processImageHeapBest(size_t topN) {
     std::vector<PixelCoord> v;
-    ComparePixelCoord comp(image);
+    ComparePixelVal comp(image);
 
     if (topN <= 0 || image.size() < 1) {
         std::cout << "Invalid input: topN is <= 0 or image has no pixels.\n";
@@ -416,7 +407,7 @@ std::vector<PixelCoord> processImageHeapBest(size_t topN) {
 
 std::vector<PixelCoord> processImageHeapBest1(size_t topN) {
     std::vector<PixelCoord> v;
-    ComparePixelCoord comp(image);
+    ComparePixelVal comp(image);
 
     if (topN <= 0 || image.size() < 1) {
         std::cout << "Invalid input: topN is <= 0 or image has no pixels.\n";
@@ -491,7 +482,7 @@ Accessing them in this order maximizes cache efficiency,
 as adjacent data is often preloaded into the cache by the CPU's prefetching mechanisms */
 
 void processSubImage(std::vector<PixelCoord>& v, size_t topN, size_t startY, size_t endY) {
-    ComparePixelCoord comp(image);
+    ComparePixelVal comp(image);
 
     
     //2*topn  + (n - topn) * (2 * log (topn)) 
@@ -536,7 +527,7 @@ std::vector<PixelCoord> processImageParallel(size_t topN) {
 
     std::vector<std::vector<PixelCoord>> localHeaps(numThreads);
     std::vector<std::thread> threads(numThreads);
-    ComparePixelCoord comp(image);
+    ComparePixelVal comp(image);
 
     size_t rowsPerThread = image.rows() / numThreads;
 
@@ -596,8 +587,8 @@ std::vector<PixelCoord> processImagePQ( size_t topN) {
     }
     topN = std::min(topN, image.size());
 
-//    std::priority_queue<PixelCoord, std::vector<PixelCoord>, ComparePixelCoord> pq(ComparePixelCoord(image));
-    std::priority_queue<PixelCoord, std::vector<PixelCoord>, ComparePixelCoord> pq{ComparePixelCoord(image)};
+//    std::priority_queue<PixelCoord, std::vector<PixelCoord>, ComparePixelVal> pq(ComparePixelVal(image));
+    std::priority_queue<PixelCoord, std::vector<PixelCoord>, ComparePixelVal> pq{ComparePixelVal(image)};
 
 
     for (int y = 0; y < image.rows(); ++y) {
