@@ -19,6 +19,8 @@ template<typename T>
 class ImageProcessor {
 private:
     IImage<T>& image; //make const
+    std::vector<PixelCoord> globalHeap;
+    //std::mutex heapMutex;
 
 
     // Comparator for the heap, used to maintain pixels with the highest values.
@@ -512,7 +514,31 @@ void processSubImage(std::vector<PixelCoord>& v, size_t topN, size_t startY, siz
     //std::sort_heap(v.begin(), v.end(), ComparePixel());
 }
 
+/*
+void processSubImageSharedHeap(size_t topN, size_t startY, size_t endY, ComparePixelVal& comp) {
+        for (size_t y = startY; y < endY; ++y) {
+            for (size_t x = 0; x < image.cols(); ++x) {
+                auto pixelValue = image.getPixelValue(x, y);
 
+                std::lock_guard<std::mutex> lock(heapMutex);
+                if (globalHeap.size() < topN) {
+                    globalHeap.push_back({x, y});
+                    if (globalHeap.size() == topN) {
+                        std::make_heap(globalHeap.begin(), globalHeap.end(), comp);
+                    }
+                } else {
+                    auto heapMinValue = image.getPixelValue(globalHeap.front().x, globalHeap.front().y);
+                    if (pixelValue > heapMinValue) {
+                        std::pop_heap(globalHeap.begin(), globalHeap.end(), comp);
+                        globalHeap.pop_back();
+
+                        globalHeap.push_back({x, y});
+                        std::push_heap(globalHeap.begin(), globalHeap.end(), comp);
+                    }
+                }
+            }
+        }
+    }*/
 
 std::vector<PixelCoord> processImageParallel(size_t topN) {
 
@@ -580,6 +606,8 @@ std::vector<PixelCoord> processImageParallel(size_t topN) {
 }
 
 
+
+
 std::vector<PixelCoord> processImagePQ( size_t topN) {
     if (topN <= 0 || image.size() < 1) {
         std::cout << "Invalid input: topN is <= 0 or image has no pixels.\n";
@@ -623,7 +651,7 @@ std::vector<PixelCoord> processImageCS(size_t topN) {
     }
     topN = std::min(topN, image.size());
 
-     // Determină valoarea maximă a pixelilor
+     // get the max
     //decltype(image.getPixelValue(0, 0))  maxPixelValue = 0; //the sise of that depend on Image
     T maxPixelValue = 0;
 
@@ -636,7 +664,7 @@ std::vector<PixelCoord> processImageCS(size_t topN) {
         }
     }
 
-    // Folosește valoarea maximă găsită pentru a construi buckets
+    // use the max valuse to build buckets
     std::vector<std::vector<PixelCoord>> buckets(maxPixelValue + 1);
 
     for (size_t y = 0; y < image.rows(); ++y) {
@@ -671,9 +699,9 @@ std::vector<PixelCoord> processImageCS_MAP( size_t topN) {
     }
     topN = std::min(topN, image.size());
 
-    std::unordered_map<unsigned short, std::vector<PixelCoord>> buckets;
+    std::unordered_map<T, std::vector<PixelCoord>> buckets;
 
-    // Construiește buckets folosind un hashmap
+    // build buckets using hashmap
     for (size_t y = 0; y < image.rows(); ++y) {
         for (size_t x = 0; x < image.cols(); ++x) {
             T pixelValue = image.getPixelValue(x, y);
@@ -684,8 +712,8 @@ std::vector<PixelCoord> processImageCS_MAP( size_t topN) {
     std::vector<PixelCoord> topPixels;
     topPixels.reserve(topN);
 
-    // Parcurgem buckets în ordinea descrescătoare a cheilor pentru a selecta top N pixeli cu cele mai mari valori
-    std::vector<unsigned short> sortedKeys;
+    // We traverse the buckets in descending order of the keys to select the top N pixels with the highest values
+    std::vector<T> sortedKeys;
     for (const auto& pair : buckets) {
         sortedKeys.push_back(pair.first);
     }
@@ -696,11 +724,11 @@ std::vector<PixelCoord> processImageCS_MAP( size_t topN) {
             if (topPixels.size() < topN) {
                 topPixels.push_back(coord);
             } else {
-                break; // Oprim bucla când am colectat suficiente pixeli
+                break; // We stop the loop when we have collected enough pixels.
             }
         }
         if (topPixels.size() >= topN) {
-            break; // Oprim bucla exterioară de asemenea
+            break; //
         }
     }
 
@@ -709,9 +737,9 @@ std::vector<PixelCoord> processImageCS_MAP( size_t topN) {
 
 struct PixelAll {
     size_t x, y;
-    unsigned short value;
+    T value;
 
-    PixelAll(size_t x, size_t y, unsigned short value) : x(x), y(y), value(value) {}
+    PixelAll(size_t x, size_t y, T value) : x(x), y(y), value(value) {}
 
 // descending order
 bool operator<( const PixelAll& rhs) const {
@@ -774,6 +802,50 @@ std::vector<PixelCoord> processImageSetCopy(size_t topN) {
 
 
 std::vector<PixelCoord> processImageSet(size_t topN) {
+    if (topN == 0 || image.size() < 1) {
+        std::cout << "Invalid input: topN is 0 or image has no pixels.\n";
+        return {};
+    }
+    topN = std::min(topN, image.size());
+
+    std::set<T> topPixelValues; 
+    std::unordered_map<T, std::vector<PixelCoord>> pixelValueToCoords;
+    size_t totalCoords = 0;
+
+    for (size_t y = 0; y < image.rows(); ++y) {
+        for (size_t x = 0; x < image.cols(); ++x) {
+            T pixelValue = image.getPixelValue(x, y);
+            if (totalCoords < topN) {
+                topPixelValues.insert(pixelValue);
+                pixelValueToCoords[pixelValue].push_back({x, y});
+                totalCoords++;
+            } else if (pixelValue > *topPixelValues.begin()) {
+              
+                auto itLowest = topPixelValues.begin();
+                if (pixelValueToCoords[*itLowest].size() > 1) {
+                    pixelValueToCoords[*itLowest].pop_back();
+                } else {
+                    pixelValueToCoords.erase(*itLowest);
+                    topPixelValues.erase(itLowest);
+                }
+                topPixelValues.insert(pixelValue);
+                pixelValueToCoords[pixelValue].push_back({x, y});
+            }
+        }
+    }
+
+    std::vector<PixelCoord> result;
+    for (const auto& val : topPixelValues) {
+        const auto& coords = pixelValueToCoords[val];
+        result.insert(result.end(), coords.begin(), coords.end());
+        //if (result.size() >= topN) break;
+    }
+
+    return result;
+}
+
+
+std::vector<PixelCoord> processImageSetOld(size_t topN) {
     if (topN <= 0 || image.size() < 1) {
         std::cout << "Invalid input: topN is <= 0 or image has no pixels.\n";
         return {};
@@ -793,7 +865,7 @@ std::vector<PixelCoord> processImageSet(size_t topN) {
             if (topPixels.size() < topN) {
                 topPixels.insert({x,y});
             } else {
-                auto itLowest = topPixels.begin(); // Elementul cu cea mai mica valoare este primul
+                auto itLowest = topPixels.begin(); // The element with the smallest value is the first one
                 T pixelLowestValue = image.getPixelValue(itLowest->x, itLowest->y);
                 if (pixelValue > pixelLowestValue) {
                     topPixels.erase(itLowest); 
