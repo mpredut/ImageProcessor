@@ -117,7 +117,8 @@ void processAndMeasure(size_t idx, size_t dimm, size_t topN,
     const std::string& outputFile, 
     ImageProcessor<uint16_t>& ip,
     size_t processid,
-    std::vector<std::function<std::vector<PixelCoord>(ImageProcessor<uint16_t>, int)>>& processFunctions
+    std::vector<std::function<std::vector<PixelCoord>(ImageProcessor<uint16_t>&, size_t)>>& processFunctions
+
 ) {
     
     if (processid >= processFunctions.size()) {
@@ -156,9 +157,13 @@ int simulate(size_t maxImgColAndRowSize, size_t topNgranularity) {
     file.close();
 
 
-    std::vector<std::function<std::vector<PixelCoord>(ImageProcessor<uint16_t>, int)>> processFunctions = {
-        &ImageProcessor<uint16_t>::processImageHeap,
-        &ImageProcessor<uint16_t>::processImageHeapBest
+    std::vector<std::function<std::vector<PixelCoord>(ImageProcessor<uint16_t>&, size_t)>>
+    processFunctions = {
+        &ImageProcessor<uint16_t>::processImageSet,
+        &ImageProcessor<uint16_t>::processImageParallelV2,
+        &ImageProcessor<uint16_t>::processImageHeapBest,
+        &ImageProcessor<uint16_t>::processImageCS
+
     };
 
    // matrix list generators
