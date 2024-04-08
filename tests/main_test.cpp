@@ -344,7 +344,7 @@ TEST(ImageProcessingPerformance, processImageHeapNice) {
 
 
 // Performance test
-TEST(ImageProcessingPerformance, processImageParallelV2) {
+TEST(ImageProcessingPerformance, processImageParallelV512) {
     std::vector<std::tuple<uint16_t, int, int>> pixels 
                 = {{255, 1, 1}, {100, 2, 2}, {150, 3, 3}};
 
@@ -357,7 +357,7 @@ TEST(ImageProcessingPerformance, processImageParallelV2) {
     ImageProcessor<uint16_t> processor(img);
 
     auto start = std::chrono::high_resolution_clock::now();
-    auto topNpix = processor.processImageParallelV2(topN);
+    auto topNpix = processor.processImageParallelV512(topN);
     auto end = std::chrono::high_resolution_clock::now();
 
     std::chrono::duration<double, std::milli> duration = end - start;
