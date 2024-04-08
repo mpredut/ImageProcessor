@@ -162,10 +162,14 @@ TEST(Test, TestFunctionality1) {
     topNpix = ip4.processImage(topN);
     ASSERT_LE(topNpix.size() , topN);
     ASSERT_GT(topNpix.size() , 0);
-    ASSERT_EQ(topNpix[0].x , 2);
-    ASSERT_EQ(topNpix[0].y , 3);
-    ASSERT_EQ(topNpix[1].x , 3);
-    ASSERT_EQ(topNpix[1].y , 5);
+//    ASSERT_EQ(topNpix[0].x , 2);
+//    ASSERT_EQ(topNpix[0].y , 3);
+//    ASSERT_EQ(topNpix[1].x , 3);
+//    ASSERT_EQ(topNpix[1].y , 5);
+
+    bool isElement1Correct = (topNpix[0].x == 2 && topNpix[0].y == 3) || (topNpix[0].x == 3 && topNpix[0].y == 5);
+    bool isElement2Correct = (topNpix[1].x == 2 && topNpix[1].y == 3) || (topNpix[1].x == 3 && topNpix[1].y == 5);
+    ASSERT_TRUE(isElement1Correct && isElement2Correct);
 }
 
 TEST(Test, TestFunctionality2) {
@@ -177,11 +181,15 @@ TEST(Test, TestFunctionality2) {
     ImageProcessor<uint16_t> ip(img);
     std::vector<PixelCoord> topNpix = ip.processImage(topN);
     ASSERT_EQ(topNpix.size() , topN);
-    ASSERT_EQ(topNpix[0].x , 4);
-    ASSERT_EQ(topNpix[0].y , 6);
-    ASSERT_EQ(topNpix[1].x , 5);
-    ASSERT_EQ(topNpix[1].y , 6);
+    //ASSERT_EQ(topNpix[0].x , 4);
+    //ASSERT_EQ(topNpix[0].y , 6);
+    //ASSERT_EQ(topNpix[1].x , 5);
+    //ASSERT_EQ(topNpix[1].y , 6);
      
+    bool isElement1Correct = (topNpix[0].x == 4 && topNpix[0].y == 6) || (topNpix[0].x == 5 && topNpix[0].y == 6);
+    bool isElement2Correct = (topNpix[1].x == 4 && topNpix[1].y == 6) || (topNpix[1].x == 5 && topNpix[1].y == 6);
+    ASSERT_TRUE(isElement1Correct && isElement2Correct);
+
     for (const auto& pixelCoord : topNpix) {
         std::cout << 
         "PixelCoord x: " << pixelCoord.x << ", y: " << pixelCoord.y << "\n";
@@ -336,7 +344,7 @@ TEST(ImageProcessingPerformance, processImageHeapNice) {
 
 
 // Performance test
-TEST(ImageProcessingPerformance, processImageParallel) {
+TEST(ImageProcessingPerformance, processImageParallelV2) {
     std::vector<std::tuple<uint16_t, int, int>> pixels 
                 = {{255, 1, 1}, {100, 2, 2}, {150, 3, 3}};
 
@@ -349,7 +357,7 @@ TEST(ImageProcessingPerformance, processImageParallel) {
     ImageProcessor<uint16_t> processor(img);
 
     auto start = std::chrono::high_resolution_clock::now();
-    auto topNpix = processor.processImageParallel(topN);
+    auto topNpix = processor.processImageParallelV2(topN);
     auto end = std::chrono::high_resolution_clock::now();
 
     std::chrono::duration<double, std::milli> duration = end - start;

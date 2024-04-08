@@ -63,7 +63,7 @@ public:
 
 std::vector<PixelCoord> processImage(size_t topN) {
     std::vector<PixelCoord> v;
-    v = processImageParallel(topN);
+    v = processImageParallelV1(topN);
 /* 
     static int c = 0;c++;
     if (c == 5) exit(0); */
@@ -483,13 +483,12 @@ Sequential Memory Access: Pixels in images are generally stored in memory sequen
 Accessing them in this order maximizes cache efficiency,
 as adjacent data is often preloaded into the cache by the CPU's prefetching mechanisms */
 
-void processSubImage(std::vector<PixelCoord>& v, size_t topN, size_t startY, size_t endY) {
+void processSubImage(std::vector<PixelCoord>& v, size_t topN, size_t startY, size_t endY, size_t startX, size_t endX) {
     ComparePixelVal comp(image);
 
-    
-    //2*topn  + (n - topn) * (2 * log (topn)) 
+    // O(N) = 2 * topn  + (n - topn) * (2 * log (topn)) 
     for (size_t y = startY; y < endY; ++y) {
-        for (size_t x = 0; x < image.cols(); ++x) {
+        for (size_t x = startX; x < endX; ++x) {
             if (v.size() < topN) {
                 v.push_back({x, y});
                 if (v.size() == topN) {
@@ -510,8 +509,6 @@ void processSubImage(std::vector<PixelCoord>& v, size_t topN, size_t startY, siz
             }
         }
     }
-
-    //std::sort_heap(v.begin(), v.end(), ComparePixel());
 }
 
 
@@ -570,7 +567,7 @@ std::vector<PixelCoord> processImageParallel(size_t topN) {
         }
 
         //threads.emplace_back(this->processSubImage, std::ref(localHeaps[i]), topN, startY, endY, comp);
-        threads[i] = std::thread(std::bind(&ImageProcessor::processSubImage, this, std::ref(localHeaps[i]), topN, startY, endY));
+        threads[i] = std::thread(std::bind(&ImageProcessor::processSubImage, this, std::ref(localHeaps[i]), topN, startY, endY, 0, image.cols()));
         //threads[i] = std::thread(std::bind(&ImageProcessor::processSubImageSharedHeap, this, topN, startY, endY, comp));
     }
 
@@ -578,57 +575,8 @@ std::vector<PixelCoord> processImageParallel(size_t topN) {
         thread.join();
     }
 
-
-
-  auto start = std::chrono::high_resolution_clock::now();
-
-   std::vector<PixelCoord> finalHeap;
-
-// Swap with the first local heap if it exists
-if (!localHeaps.empty()) {
-    finalHeap.swap(localHeaps.front());
-}
-
-// Set an iterator to the beginning of the second local heap if it exists, or to the end if not
-auto heapIt = localHeaps.begin() + (localHeaps.size() > 1 ? 1 : 0);
-auto coordIt = (heapIt != localHeaps.end()) ? heapIt->begin() : std::vector<PixelCoord>::iterator();
-
-// Fill `finalHeap` up to size topN if necessary
-while (heapIt != localHeaps.end() && finalHeap.size() < topN) {
-    // Add elements from local heaps until we reach topN
-    for (; heapIt != localHeaps.end() && coordIt != heapIt->end() && finalHeap.size() < topN; ++coordIt) {
-        finalHeap.push_back(*coordIt);
-        if (coordIt == heapIt->end() - 1) {
-            // Move to the next local heap if we have reached the end of the current one
-            ++heapIt;
-            coordIt = (heapIt != localHeaps.end()) ? heapIt->begin() - 1 : std::vector<PixelCoord>::iterator();
-        }
-    }
-}
-
-// Make `finalHeap` a heap after adding the initial elements
-if (!finalHeap.empty()) {
-    std::make_heap(finalHeap.begin(), finalHeap.end(), comp);
-}
-
-// Continue to process the remaining elements from the remaining local heaps
-for (; heapIt != localHeaps.end(); ++heapIt, coordIt = heapIt->begin()) {
-    for (; coordIt != heapIt->end(); ++coordIt) {
-        if (comp(*coordIt, finalHeap.front())) {
-            finalHeap.push_back(*coordIt);
-            std::push_heap(finalHeap.begin(), finalHeap.end(), comp);
-            std::pop_heap(finalHeap.begin(), finalHeap.end(), comp);
-            finalHeap.pop_back(); // Keep the size at topN
-        }
-    }
-}
-
-
-
-
-
-
-/*     // Combine local heaps in one global
+    auto start = std::chrono::high_resolution_clock::now();
+    // Combine local heaps in one global
     std::vector<PixelCoord> finalHeap;
     for (const auto& heap : localHeaps) {
         for (const auto& coord : heap) {
@@ -643,21 +591,109 @@ for (; heapIt != localHeaps.end(); ++heapIt, coordIt = heapIt->begin()) {
                 finalHeap.pop_back();
             }
         }
-    } */
+    } 
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> execTime = end - start;
   
-   std::cout << " Intermediar ExecTime: " << execTime.count() << " ms " << std::endl;
+    std::cout << " Intermediar ExecTime: " << execTime.count() << " ms " << std::endl;
 
     //std::sort_heap(finalHeap.begin(), finalHeap.end(),  ComparePixel(image));
-    
     //std::sort_heap(v.begin(), v.end(), ComparePixel());
     //std::sort(finalHeap.begin(), finalHeap.end(), comp);
 
     return finalHeap;
-    
+}
 
-  // return globalHeap;
+
+std::vector<PixelCoord> processImageParallelV1(size_t topN) {
+
+    size_t numThreads = std::thread::hardware_concurrency();
+    std::cout << "Num threads " << numThreads << std::endl;
+
+    if (topN <= 0 || image.size() < 1) {
+        std::cout << "Invalid input: topN is <= 0 or image has no pixels.\n";
+        return {};
+    }
+    topN = std::min(topN, image.size());
+
+    std::vector<std::vector<PixelCoord>> localHeaps(numThreads);
+    std::vector<std::thread> threads(numThreads);
+    ComparePixelVal comp(image);
+
+    for(auto& lh : localHeaps) {
+        lh.reserve(topN);
+    }
+
+    size_t rowsPerThread = image.rows() / numThreads;
+
+    for (size_t i = 0; i < numThreads; ++i) {
+        size_t startY = i * rowsPerThread;
+        size_t endY = (i + 1) * rowsPerThread;
+        if (i == numThreads - 1) {
+            endY = image.rows(); // last thread get rest lines
+        }
+
+        //threads.emplace_back(this->processSubImage, std::ref(localHeaps[i]), topN, startY, endY, comp);
+        threads[i] = std::thread(std::bind(&ImageProcessor::processSubImage, this, std::ref(localHeaps[i]), topN, startY, endY, 0, image.cols()));
+        //threads[i] = std::thread(std::bind(&ImageProcessor::processSubImageSharedHeap, this, topN, startY, endY, comp));
+    }
+
+    for (auto& thread : threads) {
+        thread.join();
+    }
+
+
+auto start = std::chrono::high_resolution_clock::now();
+
+   std::vector<PixelCoord> finalHeap;
+
+// Swap cu primul heap local, dacă există
+if (!localHeaps.empty()) {
+    finalHeap.swap(localHeaps.front());
+}
+
+// Dacă avem doar un heap sau niciunul, returnăm direct finalHeap
+if (localHeaps.size() <= 1) {
+    return finalHeap;
+}
+
+// Procesăm heap-urile începând cu al doilea
+for (size_t heapIndex = 1; heapIndex < localHeaps.size() && finalHeap.size() < topN; ++heapIndex) {
+    const auto& currentHeap = localHeaps[heapIndex];
+    for (const auto& coord : currentHeap) {
+        if (finalHeap.size() < topN) {
+            finalHeap.push_back(coord);
+        } else {
+            // Dacă am ajuns aici, finalHeap are deja topN elemente și ar trebui să fie un heap valid
+            break;
+        }
+    }
+}
+
+// Facem finalHeap un heap valid
+std::make_heap(finalHeap.begin(), finalHeap.end(), comp);
+
+// Procesăm restul elementelor din toate heap-urile, începând cu poziția unde am rămas
+// Aici presupunem că toate heap-urile vor fi procesate din nou, dar numai elementele care pot modifica heap-ul sunt considerate
+for (size_t heapIndex = 1; heapIndex < localHeaps.size(); ++heapIndex) {
+    const auto& currentHeap = localHeaps[heapIndex];
+    for (const auto& coord : currentHeap) {
+        if (comp(coord, finalHeap.front())) {
+            // Înlocuim cel mai mare element din heap (finalHeap.front()) dacă găsim unul mai "bun"
+            std::pop_heap(finalHeap.begin(), finalHeap.end(), comp); // Muta cel mai mare la sfârșit
+            finalHeap.pop_back(); // Îl scoatem din vector
+            finalHeap.push_back(coord); // Adăugăm noul element
+            std::push_heap(finalHeap.begin(), finalHeap.end(), comp); // Reordonăm
+        }
+    }
+}
+
+ auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> execTime = end - start;
+  
+    std::cout << " Intermediar ExecTime: " << execTime.count() << " ms " << std::endl;
+
+return finalHeap;
 }
 
 
@@ -683,7 +719,7 @@ std::vector<PixelCoord> processImageParallelV2(size_t topN) {
                 endY = image.rows(); // Ensure the last thread processes the remaining rows
             }
 
-            workerThreads[i] = std::thread(&ImageProcessor::workerFunction, this, topN, startY, endY);
+            workerThreads[i] = std::thread(&ImageProcessor::workerFunction2, this, topN, startY, endY);
         }
 
         // Wait for processing threads to finish
@@ -695,11 +731,11 @@ std::vector<PixelCoord> processImageParallelV2(size_t topN) {
     }
 
 
-    void workerFunction(size_t topN, size_t startY, size_t endY) {
+    void workerFunction2(size_t topN, size_t startY, size_t endY) {
         std::vector<PixelCoord> localHeap;
         localHeap.reserve(topN);
         ComparePixelVal comp(image);
-        processSubImage(localHeap, topN, startY, endY);
+        processSubImage(localHeap, topN, startY, endY, 0, image.cols());
 
         std::lock_guard<std::mutex> guard(heapMutex);
         if (globalHeap.empty()) {
@@ -723,6 +759,376 @@ std::vector<PixelCoord> processImageParallelV2(size_t topN) {
         }
     }
 
+
+
+
+std::vector<PixelCoord> processImageParallelV3(size_t topN) {
+        size_t numThreads = std::thread::hardware_concurrency();
+        std::cout << "Num threads " << numThreads << std::endl;
+
+        if (topN <= 0 || image.size() < 1) {
+            std::cout << "Invalid input: topN is <= 0 or image has no pixels.\n";
+            return {};
+        }
+        topN = std::min(topN, image.size()); 
+
+        //globalHeap.reserve(topN);
+
+        std::vector<std::thread> workerThreads(numThreads);
+        size_t rowsPerThread = image.rows() / numThreads;
+
+        for (size_t i = 0; i < numThreads; ++i) {
+            size_t startY = i * rowsPerThread;
+            size_t endY = (i + 1) * rowsPerThread;
+            if (i == numThreads - 1) {
+                endY = image.rows(); // Ensure the last thread processes the remaining rows
+            }
+
+            workerThreads[i] = std::thread(&ImageProcessor::workerFunction3, this, topN, startY, endY);
+        }
+
+        // Wait for processing threads to finish
+        for (auto& t : workerThreads) {
+            t.join();
+        }
+
+        return globalHeap;
+    }
+
+
+
+    void workerFunction3(size_t topN, size_t startY, size_t endY) {
+        T TILE_SIZE = 1024;
+        std::vector<PixelCoord> localHeap;
+        localHeap.reserve(topN);
+        ComparePixelVal comp(image);
+
+        for (size_t y = startY; y < endY; y += TILE_SIZE) {
+            size_t endTileY = std::min(y + TILE_SIZE, endY);
+            for (size_t x = 0; x < image.cols(); x += TILE_SIZE) {
+                size_t endTileX = std::min(x + TILE_SIZE, (size_t)image.cols());
+                processSubImage(localHeap, topN, y, endTileY, x, endTileX);
+            }
+        }
+
+        std::lock_guard<std::mutex> guard(heapMutex);
+        if (globalHeap.empty()) {
+            // Swap directly if the global heap is empty
+            globalHeap.swap(localHeap);
+            //std::make_heap(globalHeap.begin(), globalHeap.end(), comp);
+        } else {
+            // Otherwise, merge localHeap into globalHeap
+            for (const auto& coord : localHeap) {
+                if (globalHeap.size() < topN) {
+                    globalHeap.push_back(coord);
+                    std::push_heap(globalHeap.begin(), globalHeap.end(), comp);
+                } else if (comp(coord, globalHeap.front())) {
+                    std::pop_heap(globalHeap.begin(), globalHeap.end(), comp);
+                    globalHeap.pop_back();
+
+                    globalHeap.push_back(coord);
+                    std::push_heap(globalHeap.begin(), globalHeap.end(), comp);
+                }
+            }
+        }
+    }
+
+
+
+
+std::vector<PixelCoord> processImageParallelV32(size_t topN) {
+        size_t numThreads = std::thread::hardware_concurrency();
+        std::cout << "Num threads " << numThreads << std::endl;
+
+        if (topN <= 0 || image.size() < 1) {
+            std::cout << "Invalid input: topN is <= 0 or image has no pixels.\n";
+            return {};
+        }
+        topN = std::min(topN, image.size()); 
+
+        //globalHeap.reserve(topN);
+
+        std::vector<std::thread> workerThreads(numThreads);
+        size_t rowsPerThread = image.rows() / numThreads;
+
+        for (size_t i = 0; i < numThreads; ++i) {
+            size_t startY = i * rowsPerThread;
+            size_t endY = (i + 1) * rowsPerThread;
+            if (i == numThreads - 1) {
+                endY = image.rows(); // Ensure the last thread processes the remaining rows
+            }
+
+            workerThreads[i] = std::thread(&ImageProcessor::workerFunction3, this, topN, startY, endY);
+        }
+
+        // Wait for processing threads to finish
+        for (auto& t : workerThreads) {
+            t.join();
+        }
+
+        return globalHeap;
+    }
+
+
+
+    void workerFunction32(size_t topN, size_t startY, size_t endY) {
+        T TILE_SIZE = 32;
+        std::vector<PixelCoord> localHeap;
+        localHeap.reserve(topN);
+        ComparePixelVal comp(image);
+
+        for (size_t y = startY; y < endY; y += TILE_SIZE) {
+            size_t endTileY = std::min(y + TILE_SIZE, endY);
+            for (size_t x = 0; x < image.cols(); x += TILE_SIZE) {
+                size_t endTileX = std::min(x + TILE_SIZE, (size_t)image.cols());
+                processSubImage(localHeap, topN, y, endTileY, x, endTileX);
+            }
+        }
+
+        std::lock_guard<std::mutex> guard(heapMutex);
+        if (globalHeap.empty()) {
+            // Swap directly if the global heap is empty
+            globalHeap.swap(localHeap);
+            //std::make_heap(globalHeap.begin(), globalHeap.end(), comp);
+        } else {
+            // Otherwise, merge localHeap into globalHeap
+            for (const auto& coord : localHeap) {
+                if (globalHeap.size() < topN) {
+                    globalHeap.push_back(coord);
+                    std::push_heap(globalHeap.begin(), globalHeap.end(), comp);
+                } else if (comp(coord, globalHeap.front())) {
+                    std::pop_heap(globalHeap.begin(), globalHeap.end(), comp);
+                    globalHeap.pop_back();
+
+                    globalHeap.push_back(coord);
+                    std::push_heap(globalHeap.begin(), globalHeap.end(), comp);
+                }
+            }
+        }
+    }
+
+
+
+    
+std::vector<PixelCoord> processImageParallelV64(size_t topN) {
+        size_t numThreads = std::thread::hardware_concurrency();
+        std::cout << "Num threads " << numThreads << std::endl;
+
+        if (topN <= 0 || image.size() < 1) {
+            std::cout << "Invalid input: topN is <= 0 or image has no pixels.\n";
+            return {};
+        }
+        topN = std::min(topN, image.size()); 
+
+        //globalHeap.reserve(topN);
+
+        std::vector<std::thread> workerThreads(numThreads);
+        size_t rowsPerThread = image.rows() / numThreads;
+
+        for (size_t i = 0; i < numThreads; ++i) {
+            size_t startY = i * rowsPerThread;
+            size_t endY = (i + 1) * rowsPerThread;
+            if (i == numThreads - 1) {
+                endY = image.rows(); // Ensure the last thread processes the remaining rows
+            }
+
+            workerThreads[i] = std::thread(&ImageProcessor::workerFunction3, this, topN, startY, endY);
+        }
+
+        // Wait for processing threads to finish
+        for (auto& t : workerThreads) {
+            t.join();
+        }
+
+        return globalHeap;
+    }
+
+
+
+    void workerFunction64(size_t topN, size_t startY, size_t endY) {
+        T TILE_SIZE = 64;
+        std::vector<PixelCoord> localHeap;
+        localHeap.reserve(topN);
+        ComparePixelVal comp(image);
+
+        for (size_t y = startY; y < endY; y += TILE_SIZE) {
+            size_t endTileY = std::min(y + TILE_SIZE, endY);
+            for (size_t x = 0; x < image.cols(); x += TILE_SIZE) {
+                size_t endTileX = std::min(x + TILE_SIZE, (size_t)image.cols());
+                processSubImage(localHeap, topN, y, endTileY, x, endTileX);
+            }
+        }
+
+        std::lock_guard<std::mutex> guard(heapMutex);
+        if (globalHeap.empty()) {
+            // Swap directly if the global heap is empty
+            globalHeap.swap(localHeap);
+            //std::make_heap(globalHeap.begin(), globalHeap.end(), comp);
+        } else {
+            // Otherwise, merge localHeap into globalHeap
+            for (const auto& coord : localHeap) {
+                if (globalHeap.size() < topN) {
+                    globalHeap.push_back(coord);
+                    std::push_heap(globalHeap.begin(), globalHeap.end(), comp);
+                } else if (comp(coord, globalHeap.front())) {
+                    std::pop_heap(globalHeap.begin(), globalHeap.end(), comp);
+                    globalHeap.pop_back();
+
+                    globalHeap.push_back(coord);
+                    std::push_heap(globalHeap.begin(), globalHeap.end(), comp);
+                }
+            }
+        }
+    }
+
+
+
+
+    
+std::vector<PixelCoord> processImageParallelV128(size_t topN) {
+        size_t numThreads = std::thread::hardware_concurrency();
+        std::cout << "Num threads " << numThreads << std::endl;
+
+        if (topN <= 0 || image.size() < 1) {
+            std::cout << "Invalid input: topN is <= 0 or image has no pixels.\n";
+            return {};
+        }
+        topN = std::min(topN, image.size()); 
+
+        //globalHeap.reserve(topN);
+
+        std::vector<std::thread> workerThreads(numThreads);
+        size_t rowsPerThread = image.rows() / numThreads;
+
+        for (size_t i = 0; i < numThreads; ++i) {
+            size_t startY = i * rowsPerThread;
+            size_t endY = (i + 1) * rowsPerThread;
+            if (i == numThreads - 1) {
+                endY = image.rows(); // Ensure the last thread processes the remaining rows
+            }
+
+            workerThreads[i] = std::thread(&ImageProcessor::workerFunction3, this, topN, startY, endY);
+        }
+
+        // Wait for processing threads to finish
+        for (auto& t : workerThreads) {
+            t.join();
+        }
+
+        return globalHeap;
+    }
+
+
+
+    void workerFunction128(size_t topN, size_t startY, size_t endY) {
+        T TILE_SIZE = 128;
+        std::vector<PixelCoord> localHeap;
+        localHeap.reserve(topN);
+        ComparePixelVal comp(image);
+
+        for (size_t y = startY; y < endY; y += TILE_SIZE) {
+            size_t endTileY = std::min(y + TILE_SIZE, endY);
+            for (size_t x = 0; x < image.cols(); x += TILE_SIZE) {
+                size_t endTileX = std::min(x + TILE_SIZE, (size_t)image.cols());
+                processSubImage(localHeap, topN, y, endTileY, x, endTileX);
+            }
+        }
+
+        std::lock_guard<std::mutex> guard(heapMutex);
+        if (globalHeap.empty()) {
+            // Swap directly if the global heap is empty
+            globalHeap.swap(localHeap);
+            //std::make_heap(globalHeap.begin(), globalHeap.end(), comp);
+        } else {
+            // Otherwise, merge localHeap into globalHeap
+            for (const auto& coord : localHeap) {
+                if (globalHeap.size() < topN) {
+                    globalHeap.push_back(coord);
+                    std::push_heap(globalHeap.begin(), globalHeap.end(), comp);
+                } else if (comp(coord, globalHeap.front())) {
+                    std::pop_heap(globalHeap.begin(), globalHeap.end(), comp);
+                    globalHeap.pop_back();
+
+                    globalHeap.push_back(coord);
+                    std::push_heap(globalHeap.begin(), globalHeap.end(), comp);
+                }
+            }
+        }
+    }
+
+
+    
+    
+std::vector<PixelCoord> processImageParallelV512(size_t topN) {
+        size_t numThreads = std::thread::hardware_concurrency();
+        std::cout << "Num threads " << numThreads << std::endl;
+
+        if (topN <= 0 || image.size() < 1) {
+            std::cout << "Invalid input: topN is <= 0 or image has no pixels.\n";
+            return {};
+        }
+        topN = std::min(topN, image.size()); 
+
+        //globalHeap.reserve(topN);
+
+        std::vector<std::thread> workerThreads(numThreads);
+        size_t rowsPerThread = image.rows() / numThreads;
+
+        for (size_t i = 0; i < numThreads; ++i) {
+            size_t startY = i * rowsPerThread;
+            size_t endY = (i + 1) * rowsPerThread;
+            if (i == numThreads - 1) {
+                endY = image.rows(); // Ensure the last thread processes the remaining rows
+            }
+
+            workerThreads[i] = std::thread(&ImageProcessor::workerFunction3, this, topN, startY, endY);
+        }
+
+        // Wait for processing threads to finish
+        for (auto& t : workerThreads) {
+            t.join();
+        }
+
+        return globalHeap;
+    }
+
+
+
+    void workerFunction512(size_t topN, size_t startY, size_t endY) {
+        T TILE_SIZE = 512;
+        std::vector<PixelCoord> localHeap;
+        localHeap.reserve(topN);
+        ComparePixelVal comp(image);
+
+        for (size_t y = startY; y < endY; y += TILE_SIZE) {
+            size_t endTileY = std::min(y + TILE_SIZE, endY);
+            for (size_t x = 0; x < image.cols(); x += TILE_SIZE) {
+                size_t endTileX = std::min(x + TILE_SIZE, (size_t)image.cols());
+                processSubImage(localHeap, topN, y, endTileY, x, endTileX);
+            }
+        }
+
+        std::lock_guard<std::mutex> guard(heapMutex);
+        if (globalHeap.empty()) {
+            // Swap directly if the global heap is empty
+            globalHeap.swap(localHeap);
+            //std::make_heap(globalHeap.begin(), globalHeap.end(), comp);
+        } else {
+            // Otherwise, merge localHeap into globalHeap
+            for (const auto& coord : localHeap) {
+                if (globalHeap.size() < topN) {
+                    globalHeap.push_back(coord);
+                    std::push_heap(globalHeap.begin(), globalHeap.end(), comp);
+                } else if (comp(coord, globalHeap.front())) {
+                    std::pop_heap(globalHeap.begin(), globalHeap.end(), comp);
+                    globalHeap.pop_back();
+
+                    globalHeap.push_back(coord);
+                    std::push_heap(globalHeap.begin(), globalHeap.end(), comp);
+                }
+            }
+        }
+    }
 
 
 std::vector<PixelCoord> processImagePQ( size_t topN) {
@@ -961,6 +1367,86 @@ std::vector<PixelCoord> processImageSet(size_t topN) {
     return result;
 }
 
+
+
+std::vector<PixelCoord> processImageSetNice(size_t topN) {
+    if (topN == 0 || image.size() < 1) {
+        std::cout << "Invalid input: topN is 0 or image has no pixels.\n";
+        return {};
+    }
+    topN = std::min(topN, image.size());
+
+    std::set<T> topPixelValues; 
+    std::unordered_map<T, std::unordered_map<T, size_t>> pixelValueToCoords;
+    size_t totalCoords = 0;
+
+    for (size_t y = 0; y < image.rows(); ++y) {
+        for (size_t x = 0; x < image.cols(); ++x) {
+            T pixelValue = image.getPixelValue(x, y);
+            if (totalCoords < topN) {
+                topPixelValues.insert(pixelValue);
+                pixelValueToCoords[pixelValue][x]++;//.push_back({x, y});
+                totalCoords++;
+            } else if (pixelValue > *topPixelValues.begin()) {
+              
+                auto itLowest = topPixelValues.begin();
+                //if (pixelValueToCoords[*itLowest].size() >= 1) {
+                    //pixelValueToCoords[*itLowest].pop_back();
+                    auto& map = pixelValueToCoords[*itLowest];//this is map of x - es
+                    //if (!map.empty()) { 
+                        auto it = map.begin(); 
+                        if (it->second > 0) { 
+                            --it->second;
+                        }
+                        if (it->second == 0) { // If the value is 0, delete the element
+                            map.erase(it);
+                            if (map.empty()) { 
+                                topPixelValues.erase(itLowest);
+                                pixelValueToCoords.erase(*itLowest);
+                            }
+                        }
+                    //}
+                //} else {
+                //    pixelValueToCoords.erase(*itLowest);
+                //    topPixelValues.erase(itLowest);
+                //}
+                topPixelValues.insert(pixelValue);
+                pixelValueToCoords[pixelValue][x]++;//push_back({x, y});
+            }
+        }
+    }
+
+    std::vector<PixelCoord> result;
+    //for (const auto& val : topPixelValues) {
+        //const auto& coords = pixelValueToCoords[val];
+       // result.insert(result.end(), coords.begin(), coords.end());
+        //if (result.size() >= topN) break;
+   // }
+
+    for (const auto& val : topPixelValues) {
+        const auto& coords = pixelValueToCoords[val];
+        for (const auto& xCoord : coords) {
+            int x = xCoord.first;
+            int count = xCoord.second; // The number of times val appears in column x
+            for (int y = 0; y < image.rows() && count > 0; ++y) { 
+                if (image.getPixelValue(x, y) == val) {
+                    result.emplace_back(x, y);
+                    --count;
+                    //if (result.size() >= topN) break;
+                }
+            }
+            //if (result.size() >= topN) break;
+        }
+        //if (result.size() >= topN) break;
+    }
+
+    //for(auto & it : result) {
+   //     std::cout <<it.x << " " << it.y << std::endl;
+  //  }
+
+    //exit(0);
+    return result;
+}
 
 std::vector<PixelCoord> processImageSetOld(size_t topN) {
     if (topN <= 0 || image.size() < 1) {

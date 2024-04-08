@@ -159,11 +159,11 @@ int simulate(size_t maxImgColAndRowSize, size_t topNgranularity) {
 
     std::vector<std::function<std::vector<PixelCoord>(ImageProcessor<uint16_t>&, size_t)>>
     processFunctions = {
-        &ImageProcessor<uint16_t>::processImageSet,
-        &ImageProcessor<uint16_t>::processImageParallelV2,
-        &ImageProcessor<uint16_t>::processImageHeapBest,
-        &ImageProcessor<uint16_t>::processImageCS
-
+        &ImageProcessor<uint16_t>::processImageParallelV3,
+        &ImageProcessor<uint16_t>::processImageParallelV32,
+        &ImageProcessor<uint16_t>::processImageParallelV64,
+        &ImageProcessor<uint16_t>::processImageParallelV128,
+        &ImageProcessor<uint16_t>::processImageParallelV512
     };
 
    // matrix list generators
