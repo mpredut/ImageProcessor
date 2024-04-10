@@ -62,7 +62,7 @@ repeated_predictions = np.repeat(predictions, group_size)
 if len(repeated_predictions) == len(test_data):
     test_data['Predicted'] = repeated_predictions
 else:
-    print("Numărul de predicții repetate nu corespunde cu lungimea setului de testare.")
+    print("Numarul de predicii repetate nu corespunde cu lungimea setului de testare.")
 
 
 # Evaluarea modelului

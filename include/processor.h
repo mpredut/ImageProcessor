@@ -217,7 +217,7 @@ std::vector<PixelCoord> processImageHeapCopy(size_t topN) {
     // Overhead added here 
     std::vector<PixelCoord> result;
     std::transform(v.begin(), v.end(), std::back_inserter(result), [](const PixelAll& ac) {
-        return PixelCoord(ac.x, ac.y); // Sau orice logică de conversie necesară
+        return PixelCoord(ac.x, ac.y); 
     });
 
 return result;
@@ -937,7 +937,6 @@ std::vector<PixelCoord> processImageCS(size_t topN) {
     std::vector<PixelCoord> topPixels;
     topPixels.reserve(topN);
 
-    // Selectează top N pixeli cu cele mai mari valori
     for (auto val = maxPixelValue; val >= 0 && topPixels.size() < topN; --val) {
         for (const auto& coord : buckets[val]) {
             if (topPixels.size() < topN) {

@@ -136,7 +136,7 @@ void fillGradient(cv::Mat& region) {
 void fillGaussian(cv::Mat& region) {
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::normal_distribution<> d(128, 30); // Distribuție normală cu media 128 și deviația standard 30
+    std::normal_distribution<> d(128, 30);
 
     for (int i = 0; i < region.rows; ++i) {
         for (int j = 0; j < region.cols; ++j) {
@@ -152,7 +152,7 @@ void fillConstant(cv::Mat& region, uchar value) {
 
 cv::Mat generateMatrixWithVariableRegions(size_t size, size_t regionsX, size_t regionsY) 
 {
-    cv::Mat image(size, size, CV_8UC1, cv::Scalar(0)); // Imagine în scală de gri inițializată cu 0
+    cv::Mat image(size, size, CV_8UC1, cv::Scalar(0));
 
     size_t regionWidth = size / regionsX;
     size_t regionHeight = size / regionsY;
@@ -162,12 +162,11 @@ cv::Mat generateMatrixWithVariableRegions(size_t size, size_t regionsX, size_t r
             cv::Rect regionRect(x * regionWidth, y * regionHeight, regionWidth, regionHeight);
             cv::Mat region = image(regionRect);
 
-            // Aplică un tip de umplere bazat pe o schemă sau aleator
             switch ((x + y) % 4) { // Exemplu de schemă
                 case 0: fillUniform(region); break;
                 case 1: fillGradient(region); break;
                 case 2: fillGaussian(region); break;
-                case 3: fillConstant(region, 128); break; // Valoare constantă
+                case 3: fillConstant(region, 128); break;
             }
         }
     }
