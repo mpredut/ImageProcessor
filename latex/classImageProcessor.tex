@@ -1,0 +1,71 @@
+\hypertarget{classImageProcessor}{}\doxysection{Image\+Processor$<$ T $>$ Class Template Reference}
+\label{classImageProcessor}\index{ImageProcessor$<$ T $>$@{ImageProcessor$<$ T $>$}}
+\doxysubsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+struct \mbox{\hyperlink{structImageProcessor_1_1ComparePixelValAndCoordCopy}{Compare\+Pixel\+Val\+And\+Coord\+Copy}}
+\item 
+struct \mbox{\hyperlink{structImageProcessor_1_1PixelAll}{Pixel\+All}}
+\end{DoxyCompactItemize}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classImageProcessor_a5a7f5b988520bda8f4c02ec22d32cc01}\label{classImageProcessor_a5a7f5b988520bda8f4c02ec22d32cc01}} 
+{\bfseries Image\+Processor} (\mbox{\hyperlink{classIImage}{I\+Image}}$<$ T $>$ \&img)
+\item 
+\mbox{\Hypertarget{classImageProcessor_a81b63a909b7b0ca742dceb7b30bedd4c}\label{classImageProcessor_a81b63a909b7b0ca742dceb7b30bedd4c}} 
+std\+::vector$<$ \mbox{\hyperlink{structPixelCoord}{Pixel\+Coord}} $>$ {\bfseries process\+Image} (size\+\_\+t topN)
+\item 
+\mbox{\Hypertarget{classImageProcessor_a5510ffc283b96e7e355b0ed7a3a760d1}\label{classImageProcessor_a5510ffc283b96e7e355b0ed7a3a760d1}} 
+std\+::vector$<$ \mbox{\hyperlink{structPixelCoord}{Pixel\+Coord}} $>$ {\bfseries process\+Image\+Sort} (size\+\_\+t topN)
+\item 
+\mbox{\Hypertarget{classImageProcessor_a8ae0f752ae3dacb454ccecbf0abf2296}\label{classImageProcessor_a8ae0f752ae3dacb454ccecbf0abf2296}} 
+std\+::vector$<$ \mbox{\hyperlink{structPixelCoord}{Pixel\+Coord}} $>$ {\bfseries process\+Image\+Heap} (size\+\_\+t topN)
+\item 
+\mbox{\Hypertarget{classImageProcessor_adfd02d9b43d4b446f8d69289a7c10723}\label{classImageProcessor_adfd02d9b43d4b446f8d69289a7c10723}} 
+std\+::vector$<$ \mbox{\hyperlink{structPixelCoord}{Pixel\+Coord}} $>$ {\bfseries process\+Image\+Heap\+Copy} (size\+\_\+t topN)
+\item 
+\mbox{\Hypertarget{classImageProcessor_ae1005e621ee5b21b1154550a3e59b663}\label{classImageProcessor_ae1005e621ee5b21b1154550a3e59b663}} 
+std\+::vector$<$ \mbox{\hyperlink{structPixelCoord}{Pixel\+Coord}} $>$ {\bfseries process\+Image\+Heap\+Next\+Pixel} (size\+\_\+t topN)
+\item 
+\mbox{\Hypertarget{classImageProcessor_a913b21d5d236a057c423d011c4a1cc67}\label{classImageProcessor_a913b21d5d236a057c423d011c4a1cc67}} 
+std\+::vector$<$ \mbox{\hyperlink{structPixelCoord}{Pixel\+Coord}} $>$ {\bfseries process\+Image\+Heap\+Next\+Pixel\+Copy} (size\+\_\+t topN)
+\item 
+\mbox{\Hypertarget{classImageProcessor_a130a61ffb5ec0e6989ce18a8f88c0048}\label{classImageProcessor_a130a61ffb5ec0e6989ce18a8f88c0048}} 
+std\+::vector$<$ \mbox{\hyperlink{structPixelCoord}{Pixel\+Coord}} $>$ {\bfseries process\+Image\+Heap\+Unrolling} (size\+\_\+t topN)
+\item 
+\mbox{\Hypertarget{classImageProcessor_a8f4ac39ebbe71bc70c83be01bb6d1454}\label{classImageProcessor_a8f4ac39ebbe71bc70c83be01bb6d1454}} 
+std\+::vector$<$ \mbox{\hyperlink{structPixelCoord}{Pixel\+Coord}} $>$ {\bfseries process\+Image\+Heap\+Best} (size\+\_\+t topN)
+\item 
+\mbox{\Hypertarget{classImageProcessor_ae154cc67d3b2b7c344b39a0570d01cf1}\label{classImageProcessor_ae154cc67d3b2b7c344b39a0570d01cf1}} 
+std\+::vector$<$ \mbox{\hyperlink{structPixelCoord}{Pixel\+Coord}} $>$ {\bfseries process\+Image\+Heap\+Best1} (size\+\_\+t topN)
+\item 
+\mbox{\Hypertarget{classImageProcessor_a36cba710e3eb4e11c263f2b26709161c}\label{classImageProcessor_a36cba710e3eb4e11c263f2b26709161c}} 
+void {\bfseries process\+Sub\+Image} (std\+::vector$<$ \mbox{\hyperlink{structPixelCoord}{Pixel\+Coord}} $>$ \&v, size\+\_\+t topN, size\+\_\+t startY, size\+\_\+t endY)
+\item 
+\mbox{\Hypertarget{classImageProcessor_afd53f56ae90a8c9a672440260b2c263c}\label{classImageProcessor_afd53f56ae90a8c9a672440260b2c263c}} 
+std\+::vector$<$ \mbox{\hyperlink{structPixelCoord}{Pixel\+Coord}} $>$ {\bfseries process\+Image\+Parallel} (size\+\_\+t topN)
+\item 
+\mbox{\Hypertarget{classImageProcessor_a6ac7367434fe235ba7fc02074a66e8ea}\label{classImageProcessor_a6ac7367434fe235ba7fc02074a66e8ea}} 
+std\+::vector$<$ \mbox{\hyperlink{structPixelCoord}{Pixel\+Coord}} $>$ {\bfseries process\+Image\+PQ} (size\+\_\+t topN)
+\item 
+\mbox{\Hypertarget{classImageProcessor_a1456101fc94378fd3cf365fcd4ef2275}\label{classImageProcessor_a1456101fc94378fd3cf365fcd4ef2275}} 
+std\+::vector$<$ \mbox{\hyperlink{structPixelCoord}{Pixel\+Coord}} $>$ {\bfseries process\+Image\+CS} (size\+\_\+t topN)
+\item 
+\mbox{\Hypertarget{classImageProcessor_a62a6b345ff88da446c6369bb31705b57}\label{classImageProcessor_a62a6b345ff88da446c6369bb31705b57}} 
+std\+::vector$<$ \mbox{\hyperlink{structPixelCoord}{Pixel\+Coord}} $>$ {\bfseries process\+Image\+C\+S\+\_\+\+M\+AP} (size\+\_\+t topN)
+\item 
+\mbox{\Hypertarget{classImageProcessor_a0b04f1ccdb5b56afb17c0652cab783f9}\label{classImageProcessor_a0b04f1ccdb5b56afb17c0652cab783f9}} 
+std\+::vector$<$ \mbox{\hyperlink{structPixelCoord}{Pixel\+Coord}} $>$ {\bfseries convert\+Set\+To\+Vector} (const std\+::set$<$ \mbox{\hyperlink{structImageProcessor_1_1PixelAll}{Pixel\+All}}, \mbox{\hyperlink{structImageProcessor_1_1ComparePixelValAndCoordCopy}{Compare\+Pixel\+Val\+And\+Coord\+Copy}} $>$ \&top\+Pixels)
+\item 
+\mbox{\Hypertarget{classImageProcessor_a59f8c762a4b676c5ffd56b22ab1c05fb}\label{classImageProcessor_a59f8c762a4b676c5ffd56b22ab1c05fb}} 
+std\+::vector$<$ \mbox{\hyperlink{structPixelCoord}{Pixel\+Coord}} $>$ {\bfseries process\+Image\+Set\+Copy} (size\+\_\+t topN)
+\item 
+\mbox{\Hypertarget{classImageProcessor_ab2cfacf9d46d79a392814b0ccd1c28b5}\label{classImageProcessor_ab2cfacf9d46d79a392814b0ccd1c28b5}} 
+std\+::vector$<$ \mbox{\hyperlink{structPixelCoord}{Pixel\+Coord}} $>$ {\bfseries process\+Image\+Set} (size\+\_\+t topN)
+\end{DoxyCompactItemize}
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+include/processor.\+h\end{DoxyCompactItemize}
